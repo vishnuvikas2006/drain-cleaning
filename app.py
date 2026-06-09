@@ -4,16 +4,27 @@ from flask_bcrypt import Bcrypt
 from pymongo import MongoClient
 from bson import ObjectId
 from datetime import datetime
+from dotenv import load_dotenv
 import os, base64, random, json
 import numpy as np
 
+# ===================== LOAD ENVIRONMENT VARIABLES =====================
+load_dotenv()
+
+# ===================== FLASK APP SETUP =====================
 app = Flask(__name__, static_folder="static", template_folder=".")
 CORS(app)
 bcrypt = Bcrypt(app)
 
-# --- MongoDB Setup ---
+# ===================== MONGODB ATLAS SETUP =====================
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
-client = MongoClient(MONGO_URI)
+try:
+    client = MongoClient(MONGO_URI, serverSelectionTimeoutMS=5000)
+    client.admin.command('ping')  # Test connection
+    print("✅ MongoDB Atlas Connected!")
+except Exception as e:
+    print(f"❌ MongoDB Connection Error: {e}")
+
 db = client["smart_drainage"]
 
 users_col       = db["users"]
@@ -22,7 +33,7 @@ pickups_col     = db["pickup_requests"]
 reports_col     = db["reports"]
 predictions_col = db["predictions"]
 
-# --- Helper ---
+# ===================== HELPER FUNCTIONS =====================
 def jify(obj):
     """Recursively convert ObjectId / datetime to str for JSON."""
     if isinstance(obj, list):
@@ -39,6 +50,10 @@ def jify(obj):
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
+
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({"status": "✅ API is running"}), 200
 
 # ===================== AUTH =====================
 @app.route("/api/register", methods=["POST"])
@@ -246,5 +261,16 @@ def leaderboard():
                          .sort("reward_points", -1).limit(10))
     return jsonify(jify(top))
 
+# ===================== ERROR HANDLING =====================
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({"error": "Route not found"}), 404
+
+@app.errorhandler(500)
+def server_error(error):
+    return jsonify({"error": "Internal server error"}), 500
+
+# ===================== RUN APP =====================
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.getenv('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
