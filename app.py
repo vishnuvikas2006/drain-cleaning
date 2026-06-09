@@ -6,7 +6,7 @@ from bson import ObjectId
 from datetime import datetime
 from dotenv import load_dotenv
 import os, base64, random, json
-import numpy as np
+import os, base64, random, json
 
 # ===================== LOAD ENVIRONMENT VARIABLES =====================
 load_dotenv()
