@@ -1,0 +1,1165 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Drainage Waste Management System</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<!-- Leaflet CSS and JS for OpenStreetMap -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<link rel="stylesheet" href="/static/style.css">
+
+<style>
+  :root {
+    --primary: #0f7b5c;
+    --primary-light: #e1f5ee;
+    --accent: #1dbf8a;
+    --accent2: #f5a623;
+    --danger: #e24b4a;
+    --warn: #ef9f27;
+    --bg: #f4f6f3;
+    --card-bg: #ffffff;
+    --text: #1a2318;
+    --text-m: #4a5568;
+    --text-d: #9aa5b1;
+    --border: rgba(0,0,0,0.08);
+    --glass: rgba(15,123,92,0.06);
+    --nav-h: 64px;
+    --radius: 14px;
+    --shadow: 0 2px 16px rgba(15,123,92,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* NAV */
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    height: var(--nav-h);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0 2rem;
+  }
+  .nav-brand {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800; font-size: 1.2rem;
+    display: flex; align-items: center; gap: 8px;
+    color: var(--primary);
+    white-space: nowrap;
+  }
+  .nav-brand i { font-size: 20px; }
+  .nav-brand span { color: var(--accent); }
+  .nav-links { display: flex; align-items: center; gap: 2px; flex: 1; flex-wrap: wrap; }
+  .nav-links button {
+    background: none; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 500;
+    color: var(--text-m); padding: .4rem .7rem; border-radius: 8px;
+    transition: all .15s;
+  }
+  .nav-links button:hover { background: var(--glass); color: var(--primary); }
+  .nav-actions { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    border: none; cursor: pointer; border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-weight: 500;
+    transition: all .15s; padding: .55rem 1.2rem; font-size: .88rem;
+  }
+  .btn i { font-size: 16px; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #0d6b4f; transform: translateY(-1px); }
+  .btn-secondary { background: var(--glass); color: var(--primary); border: 1px solid rgba(15,123,92,0.2); }
+  .btn-secondary:hover { background: var(--primary-light); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-danger:hover { background: #c43c3b; }
+  .btn-sm { padding: .35rem .8rem; font-size: .78rem; }
+  .btn-warn { background: var(--warn); color: #fff; }
+  .btn-location {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: #fff;
+    border: none;
+  }
+  .btn-location:hover {
+    background: linear-gradient(135deg, #5a6fd6 0%, #6a4192 100%);
+    transform: translateY(-1px);
+  }
+  .btn-location:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+  .btn-location.pulse {
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+  }
+
+  /* PAGE SYSTEM */
+  .page { display: none; min-height: calc(100vh - var(--nav-h)); }
+  .page.active { display: block; }
+
+  /* HERO */
+  .hero {
+    position: relative; overflow: hidden;
+    background: linear-gradient(135deg, #0a4f3a01 0%, #0f7b5c4f 50%, #1dbf8a 100%);
+    min-height: 90vh; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; text-align: center; padding: 4rem 2rem;
+  }
+  .hero h1 {
+    font-family: 'Syne', sans-serif; font-size: clamp(2.5rem,6vw,4.5rem);
+    font-weight: 800; color:#0f7b5c; line-height: 1.1; margin-bottom: 1.2rem;
+  }
+  .hero p {  display: inline-flex; align-items: center; gap: 6px;
+    background:#ffffff; border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50px; padding: .4rem 1rem; font-size: .78rem;
+    color:#0f7b5c; letter-spacing: .5px; margin-bottom: 1.5rem;}
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    background:#0f7b5c; border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50px; padding: .4rem 1rem; font-size: .78rem;
+    color: rgba(255,255,255,0.9); letter-spacing: .5px; margin-bottom: 1.5rem;
+  }
+  .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .hero-btns .btn-primary { background: #fff; color: var(--primary); font-weight: 600; }
+  .hero-btns .btn-primary:hover { background: #e8f5f0; }
+  .hero-btns .btn-secondary { border-color: rgba(255, 255, 255, 0.847); color: #ffffff; background: #0f7b5c; }
+  .hero-btns .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+
+  /* Floating icons grid */
+  .floating-icons {
+    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
+  }
+  .fi {
+    position: absolute;
+    display: flex; align-items: center; justify-content: center;
+    width: 52px; height: 52px; border-radius: 14px;
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.6); font-size: 22px;
+    animation: floatIcon 6s ease-in-out infinite;
+  }
+  .fi:nth-child(1) { top:8%; left:6%; animation-delay:0s; }
+  .fi:nth-child(2) { top:15%; left:18%; animation-delay:.7s; }
+  .fi:nth-child(3) { top:6%; right:12%; animation-delay:1.4s; }
+  .fi:nth-child(4) { top:22%; right:6%; animation-delay:.3s; }
+  .fi:nth-child(5) { bottom:18%; left:5%; animation-delay:2s; }
+  .fi:nth-child(6) { bottom:10%; left:20%; animation-delay:1s; }
+  .fi:nth-child(7) { bottom:20%; right:8%; animation-delay:1.8s; }
+  .fi:nth-child(8) { bottom:8%; right:22%; animation-delay:.5s; }
+  @keyframes floatIcon {
+    0%,100% { transform: translateY(0) rotate(0deg); opacity:.5; }
+    50% { transform: translateY(-12px) rotate(4deg); opacity:.9; }
+  }
+
+  /* CONTAINER */
+  .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; }
+  .section-head { text-align: center; margin-bottom: 2.5rem; }
+  .section-head h2 {
+    font-family: 'Syne', sans-serif; font-size: clamp(1.6rem,3vw,2.2rem);
+    font-weight: 700; color: var(--text); margin-bottom: .5rem;
+  }
+  .section-head p { color: var(--text-m); font-size: .95rem; }
+
+  /* CARDS */
+  .card {
+    background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.4rem 1.6rem;
+    box-shadow: var(--shadow);
+  }
+  .card h3, .card h4 { font-family: 'Syne', sans-serif; font-weight: 600; }
+
+  /* GRIDS */
+  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 1.2rem; }
+  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 1rem; }
+
+  /* STAT CARDS */
+  .stat-card { text-align: center; padding: 1.5rem 1rem; }
+  .stat-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: var(--primary-light); display: flex; align-items: center;
+    justify-content: center; margin: 0 auto .8rem;
+  }
+  .stat-icon i { font-size: 24px; color: var(--primary); }
+  .stat-num { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 700; color: var(--primary); }
+  .stat-label { font-size: .8rem; color: var(--text-m); margin-top: .2rem; }
+
+  /* FORM */
+  .form-group { margin-bottom: 1rem; }
+  .form-group label { display: block; font-size: .82rem; font-weight: 500; color: var(--text-m); margin-bottom: .35rem; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: .6rem .85rem; border: 1px solid var(--border);
+    border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .9rem;
+    background: var(--card-bg); color: var(--text); transition: border .15s;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    outline: none; border-color: var(--accent);
+  }
+  .form-group textarea { resize: vertical; min-height: 90px; }
+
+  /* AUTH */
+  .auth-wrap { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; padding: 2rem; }
+  .auth-card { width: 100%; max-width: 420px; }
+  .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .auth-tab { flex: 1; text-align: center; padding: .7rem; font-size: .9rem; font-weight: 500; cursor: pointer; color: var(--text-m); border-bottom: 2px solid transparent; transition: all .15s; }
+  .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
+    background: var(--text); color: #fff; padding: .75rem 1.2rem;
+    border-radius: 10px; font-size: .88rem; opacity: 0; pointer-events: none;
+    transition: opacity .3s; max-width: 320px;
+  }
+  #toast.show { opacity: 1; }
+
+  /* BADGES */
+  .badge { display: inline-flex; align-items: center; gap: 4px; padding: .25rem .6rem; border-radius: 6px; font-size: .75rem; font-weight: 500; }
+  .badge-green { background: var(--primary-light); color: var(--primary); }
+  .badge-red { background: #fcebeb; color: var(--danger); }
+  .badge-warn { background: #faeeda; color: #854f0b; }
+
+  /* TABS */
+  .tabs, .tab-row { display: flex; gap: .5rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+  .tab-btn {
+    background: none; border: 1px solid var(--border); cursor: pointer;
+    padding: .4rem .9rem; border-radius: 8px; font-size: .82rem;
+    font-family: 'DM Sans', sans-serif; color: var(--text-m); font-weight: 500;
+    transition: all .15s;
+  }
+  .tab-btn.active, .tab-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* TABLE */
+  .data-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  .data-table th { text-align: left; padding: .6rem .8rem; color: var(--text-m); font-weight: 500; border-bottom: 1px solid var(--border); font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
+  .data-table td { padding: .6rem .8rem; border-bottom: 1px solid var(--border); color: var(--text); }
+  .data-table tr:last-child td { border-bottom: none; }
+
+  /* DROP ZONE */
+  #dropZone {
+    border: 2px dashed rgba(15,123,92,0.3); border-radius: var(--radius);
+    padding: 2.5rem; text-align: center; cursor: pointer; transition: all .2s;
+    background: var(--card-bg);
+  }
+  #dropZone:hover { border-color: var(--accent); background: var(--primary-light); }
+  .dz-icon { font-size: 3rem; color: var(--primary); margin-bottom: .5rem; }
+  .dz-icon i { font-size: 48px; }
+
+  /* RISK ITEMS */
+  .risk-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .85rem 1rem; background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: .6rem;
+  }
+  .risk-bar-wrap { flex: 1; margin: 0 1rem; }
+  .risk-bar { height: 6px; border-radius: 3px; background: var(--primary-light); overflow: hidden; }
+  .risk-bar-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+
+  /* POINTS DISPLAY */
+  .points-display {
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    border-radius: var(--radius); padding: 2rem; text-align: center; color: #fff;
+  }
+  .points-num { font-family: 'Syne', sans-serif; font-size: 3.5rem; font-weight: 800; }
+
+  /* LEADERBOARD */
+  .lb-row {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .75rem .8rem; border-radius: 10px; margin-bottom: .4rem;
+    background: var(--glass);
+  }
+  .lb-rank { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; width: 28px; color: var(--primary); }
+  .lb-name { flex: 1; font-weight: 500; }
+  .lb-pts { color: var(--primary); font-weight: 600; }
+
+  /* MARKETPLACE CARD */
+  .listing-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    overflow: hidden; box-shadow: var(--shadow); transition: transform .2s;
+  }
+  .listing-card:hover { transform: translateY(-3px); }
+  .listing-img { width: 100%; height: 160px; object-fit: cover; background: var(--primary-light); display: flex; align-items: center; justify-content: center; }
+  .listing-img i { font-size: 48px; color: var(--primary); opacity: .4; }
+  .listing-body { padding: 1rem; }
+  .listing-type { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--primary); margin-bottom: .3rem; }
+  .listing-title { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 1rem; margin-bottom: .4rem; }
+  .listing-meta { font-size: .8rem; color: var(--text-m); }
+
+  /* INFO ROW */
+  .info-row { display: flex; gap: .8rem; align-items: flex-start; padding: .8rem 0; border-bottom: 1px solid var(--border); }
+  .info-row:last-child { border-bottom: none; }
+  .info-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .info-icon i { font-size: 20px; color: var(--primary); }
+
+  /* AI RESULT */
+  #aiResult { margin-top: 1.5rem; }
+  .ai-result-card {
+    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 1.5rem; border-left: 4px solid var(--accent);
+  }
+
+  /* PILL ROW */
+  .pill-row { display: flex; gap: .5rem; flex-wrap: wrap; margin: .6rem 0; }
+  .pill { background: var(--primary-light); color: var(--primary); padding: .25rem .7rem; border-radius: 50px; font-size: .78rem; font-weight: 500; }
+
+  /* REPORT ITEM */
+  .report-item {
+    padding: .9rem 1rem; background: var(--card-bg); border: 1px solid var(--border);
+    border-radius: 10px; margin-bottom: .6rem;
+  }
+  .report-meta { font-size: .75rem; color: var(--text-d); margin-top: .3rem; display: flex; gap: .5rem; align-items: center; }
+  
+  /* MAP STYLES */
+  .map-container {
+    height: 400px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    margin-bottom: 0.5rem;
+    z-index: 1;
+    background: #e8e8e8;
+  }
+  
+  .map-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .map-info-text {
+    font-size: .78rem;
+    color: var(--text-m);
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+  
+  .location-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: var(--glass);
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: var(--text-m);
+    margin-bottom: 0.5rem;
+  }
+  
+  .location-status i {
+    color: var(--primary);
+  }
+  
+  .location-status.active {
+    background: var(--primary-light);
+    color: var(--primary);
+  }
+  
+  .coordinates-display {
+    font-family: monospace;
+    font-size: 0.75rem;
+    color: var(--text-m);
+    padding: 0.25rem 0.5rem;
+    background: var(--glass);
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div id="toast"></div>
+
+<!-- NAVBAR -->
+<nav>
+  <div class="nav-brand">
+    <i class="ti ti-droplet-half-2" aria-hidden="true"></i>
+    Smart<span>Drain</span>
+  </div>
+  <div class="nav-links">
+    <button data-page="hero"        onclick="navigate('hero')"><i class="ti ti-home" aria-hidden="true"></i> Home</button>
+    <button data-page="about"       onclick="navigate('about')"><i class="ti ti-info-circle" aria-hidden="true"></i> About</button>
+    <button data-page="marketplace" onclick="navigate('marketplace')"><i class="ti ti-building-store" aria-hidden="true"></i> Marketplace</button>
+    <button data-page="detect"      onclick="navigate('detect')"><i class="ti ti-cpu" aria-hidden="true"></i> AI Detect</button>
+    <button data-page="pickup"      onclick="navigate('pickup')"><i class="ti ti-truck" aria-hidden="true"></i> Pickup</button>
+    <button data-page="reports"     onclick="navigate('reports')"><i class="ti ti-map-pin" aria-hidden="true"></i> Reports</button>
+    <button data-page="risk"        onclick="navigate('risk')"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Risk Map</button>
+    <button data-page="rewards"     onclick="navigate('rewards')"><i class="ti ti-trophy" aria-hidden="true"></i> Rewards</button>
+    <button data-page="analytics"   onclick="navigate('analytics')"><i class="ti ti-chart-bar" aria-hidden="true"></i> Analytics</button>
+    <button data-page="contact"     onclick="navigate('contact')"><i class="ti ti-mail" aria-hidden="true"></i> Contact</button>
+    <button data-page="adminLogin"  onclick="navigate('adminLogin')" style="color:var(--accent)"><i class="ti ti-shield-lock" aria-hidden="true"></i> Admin</button>
+  </div>
+  <div class="nav-actions">
+    <span id="userBadge"></span>
+    <button class="btn btn-secondary btn-sm" id="loginNavBtn" onclick="navigate('auth')">
+      <i class="ti ti-login" aria-hidden="true"></i> Login
+    </button>
+    <button class="btn btn-danger btn-sm" id="logoutBtn" onclick="handleLogout()" style="display:none">
+      <i class="ti ti-logout" aria-hidden="true"></i> Logout
+    </button>
+  </div>
+</nav>
+
+<!-- ============================================================ HERO -->
+<div id="heroPage" class="page active">
+  <div class="hero">
+    <div class="floating-icons">
+      <span class="fi"><i class="ti ti-recycle" aria-hidden="true"></i></span>
+      <span class="fi"><i class="ti ti-droplet" aria-hidden="true"></i></span>
+      <span class="fi"><i class="ti ti-leaf" aria-hidden="true"></i></span>
+      <span class="fi"><i class="ti ti-trash" aria-hidden="true"></i></span>
+      <span class="fi"><i class="ti ti-water" aria-hidden="true"></i></span>
+      <span class="fi"><i class="ti ti-world" aria-hidden="true"></i></span>
+      <span class="fi"><i class="ti ti-settings" aria-hidden="true"></i></span>
+      <span class="fi"><i class="ti ti-package" aria-hidden="true"></i></span>
+    </div>
+    <div style="position:relative;z-index:1">
+      <div class="hero-tag">
+        <i class="ti ti-world-check" aria-hidden="true"></i>
+        Smart City &nbsp;·&nbsp; AI-Powered &nbsp;·&nbsp; Eco-Friendly
+      </div>
+      <h1>Smart Drainage<br>Waste Management</h1>
+      <p>Prevent drain blockages, promote recycling, and build cleaner communities with AI-powered waste classification and ML risk prediction.</p>
+      <div class="hero-btns">
+        <button class="btn btn-primary" onclick="navigate('auth')">
+          <i class="ti ti-rocket" aria-hidden="true"></i> Get Started
+        </button>
+        <button class="btn btn-secondary" onclick="navigate('about')">
+          <i class="ti ti-arrow-right" aria-hidden="true"></i> Learn More
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ ABOUT -->
+<div id="aboutPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2>About the Project</h2>
+    <p>Solving urban drainage pollution through technology</p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="info-row" style="border:none;padding:0">
+        <div class="info-icon" style="background:#fcebeb">
+          <i class="ti ti-wave-sine" style="color:var(--danger)" aria-hidden="true"></i>
+        </div>
+        <div>
+          <h3 style="color:var(--danger);margin-bottom:.5rem">The Problem</h3>
+          <p style="color:var(--text-m);line-height:1.8;font-size:.9rem">Improper disposal of plastic, metal, paper, and other recyclables into public drainage systems causes flooding, water stagnation, mosquito breeding, and disease spread. Manual monitoring is slow and inefficient.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="info-row" style="border:none;padding:0">
+        <div class="info-icon">
+          <i class="ti ti-bulb" aria-hidden="true"></i>
+        </div>
+        <div>
+          <h3 style="color:var(--accent);margin-bottom:.5rem">Our Solution</h3>
+          <p style="color:var(--text-m);line-height:1.8;font-size:.9rem">A digital platform that enables citizens to sell, donate, and recycle waste instead of dumping it. AI classifies waste from photos, ML predicts high-risk areas, and the reward system incentivizes eco-friendly behavior.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="grid-3" style="margin-top:1.5rem">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
+        <i class="ti ti-code" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
+        <h4 style="color:var(--primary)">Frontend</h4>
+      </div>
+      <p style="color:var(--text-m);font-size:.85rem">HTML5 · CSS3 · JavaScript · Bootstrap 5</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
+        <i class="ti ti-server" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
+        <h4 style="color:var(--primary)">Backend</h4>
+      </div>
+      <p style="color:var(--text-m);font-size:.85rem">Python · Flask · REST API</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
+        <i class="ti ti-database" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
+        <h4 style="color:var(--primary)">Database</h4>
+      </div>
+      <p style="color:var(--text-m);font-size:.85rem">MongoDB · PyMongo</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
+        <i class="ti ti-brain" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
+        <h4 style="color:var(--primary)">AI / ML</h4>
+      </div>
+      <p style="color:var(--text-m);font-size:.85rem">Scikit-Learn · Pandas · NumPy · OpenCV</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
+        <i class="ti ti-chart-pie" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
+        <h4 style="color:var(--primary)">Charts</h4>
+      </div>
+      <p style="color:var(--text-m);font-size:.85rem">Chart.js · Interactive Dashboards</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
+        <i class="ti ti-shield-check" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
+        <h4 style="color:var(--primary)">Security</h4>
+      </div>
+      <p style="color:var(--text-m);font-size:.85rem">Bcrypt · CORS · Input Validation</p>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ AUTH -->
+<div id="authPage" class="page">
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <div class="nav-brand" style="justify-content:center;margin-bottom:1.5rem;font-size:1.2rem">
+      <i class="ti ti-droplet-half-2" aria-hidden="true"></i>
+      Smart<span>Drain</span>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Login</div>
+      <div class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">Register</div>
+    </div>
+    <div id="loginForm">
+      <div class="form-group"><label>Email</label><input id="loginEmail" type="email" placeholder="you@email.com"></div>
+      <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="••••••••"></div>
+      <button id="loginBtn" class="btn btn-primary" style="width:100%" onclick="handleLogin()">
+        <i class="ti ti-lock-open" aria-hidden="true"></i> Login
+      </button>
+    </div>
+    <div id="registerForm" style="display:none">
+      <div class="form-group"><label>Full Name</label><input id="regName" type="text" placeholder="Your Name"></div>
+      <div class="form-group"><label>Email</label><input id="regEmail" type="email" placeholder="you@email.com"></div>
+      <div class="form-group"><label>Password</label><input id="regPass" type="password" placeholder="••••••••"></div>
+      <button id="regBtn" class="btn btn-primary" style="width:100%" onclick="handleRegister()">
+        <i class="ti ti-user-plus" aria-hidden="true"></i> Create Account
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ DASHBOARD -->
+<div id="dashboardPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2>Welcome back, <span id="dashName" style="color:var(--accent)">User</span></h2>
+    <p>Here's your eco-activity summary</p>
+  </div>
+  <div class="grid-4">
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-leaf" aria-hidden="true"></i></div>
+      <div class="stat-num" id="dashPts">0</div>
+      <div class="stat-label">Reward Points</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-recycle" aria-hidden="true"></i></div>
+      <div class="stat-num" id="dashListings">0</div>
+      <div class="stat-label">My Listings</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-world" aria-hidden="true"></i></div>
+      <div class="stat-num" id="dashEco">0</div>
+      <div class="stat-label">Eco Score</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-trophy" aria-hidden="true"></i></div>
+      <div class="stat-num">—</div>
+      <div class="stat-label">Your Rank</div>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-top:1.5rem">
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-bolt" aria-hidden="true"></i> Quick Actions
+      </h4>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <button class="btn btn-primary" onclick="navigate('sell')"><i class="ti ti-coin" aria-hidden="true"></i> Sell Waste</button>
+        <button class="btn btn-secondary" onclick="navigate('donate')"><i class="ti ti-gift" aria-hidden="true"></i> Donate Waste</button>
+        <button class="btn btn-secondary" onclick="navigate('detect')"><i class="ti ti-cpu" aria-hidden="true"></i> Detect Waste Type</button>
+        <button class="btn btn-secondary" onclick="navigate('pickup')"><i class="ti ti-truck" aria-hidden="true"></i> Request Pickup</button>
+        <button class="btn btn-secondary" onclick="navigate('reports')"><i class="ti ti-map-pin" aria-hidden="true"></i> Report Issue</button>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-gift" aria-hidden="true"></i> How to Earn Points
+      </h4>
+      <div style="display:flex;flex-direction:column;gap:.6rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:var(--glass);border-radius:8px">
+          <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-recycle" aria-hidden="true"></i> Sell waste listing</span>
+          <span style="color:var(--primary);font-weight:700">+10 pts</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:var(--glass);border-radius:8px">
+          <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-gift" aria-hidden="true"></i> Donate waste listing</span>
+          <span style="color:var(--primary);font-weight:700">+20 pts</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:var(--glass);border-radius:8px">
+          <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-map-pin" aria-hidden="true"></i> Submit community report</span>
+          <span style="color:var(--primary);font-weight:700">+5 pts</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:var(--glass);border-radius:8px">
+          <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-users" aria-hidden="true"></i> Participate in drive</span>
+          <span style="color:var(--primary);font-weight:700">+50 pts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ MARKETPLACE -->
+<div id="marketplacePage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2>Waste Marketplace</h2>
+    <p>Buy, sell, and donate recyclable waste materials</p>
+  </div>
+  <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center">
+    <button class="tab-btn active" onclick="loadMarketplace('all');this.parentNode.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">
+      All
+    </button>
+    <button class="tab-btn" onclick="loadMarketplace('sell');this.parentNode.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">
+      <i class="ti ti-coin" aria-hidden="true"></i> For Sale
+    </button>
+    <button class="tab-btn" onclick="loadMarketplace('donate');this.parentNode.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">
+      <i class="ti ti-gift" aria-hidden="true"></i> Donations
+    </button>
+    <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('sell')">
+      <i class="ti ti-plus" aria-hidden="true"></i> Sell
+    </button>
+    <button class="btn btn-secondary btn-sm" onclick="navigate('donate')">
+      <i class="ti ti-plus" aria-hidden="true"></i> Donate
+    </button>
+  </div>
+  <div class="grid-3" id="listingsGrid"><p style="color:var(--text-m)">Loading listings...</p></div>
+</div>
+</div>
+
+<!-- ============================================================ SELL -->
+<div id="sellPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-coin" style="color:var(--primary)" aria-hidden="true"></i> Sell Waste</h2>
+    <p>List recyclable waste for sale and earn +10 reward points</p>
+  </div>
+  <div class="card" style="max-width:560px">
+    <div class="form-group"><label>Waste Type</label>
+      <select id="sellWasteType">
+        <option value="plastic">Plastic</option><option value="paper">Paper</option>
+        <option value="metal">Metal</option><option value="glass">Glass</option>
+        <option value="e-waste">Electronic Waste</option><option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Quantity (kg)</label><input id="sellQty" type="number" placeholder="e.g. 5"></div>
+    <div class="form-group"><label>Price per kg (₹)</label><input id="sellPrice" type="number" placeholder="e.g. 10"></div>
+    <div class="form-group"><label>Pickup Location</label><input id="sellLoc" type="text" placeholder="Area, City"></div>
+    <div class="form-group"><label>Description</label><textarea id="sellDesc" placeholder="Condition, more details..."></textarea></div>
+    <div class="form-group"><label>Upload Image</label><input id="sellImage" type="file" accept="image/*" style="padding:.4rem"></div>
+    <button id="sellBtn" class="btn btn-primary" onclick="handleAddListing('sell')">
+      <i class="ti ti-clipboard-list" aria-hidden="true"></i> Post Listing (+10 pts)
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ DONATE -->
+<div id="donatePage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-gift" style="color:var(--primary)" aria-hidden="true"></i> Donate Waste</h2>
+    <p>Donate recyclable materials and earn +20 reward points</p>
+  </div>
+  <div class="card" style="max-width:560px">
+    <div class="form-group"><label>Waste Type</label>
+      <select id="donateWasteType">
+        <option value="plastic">Plastic</option><option value="paper">Paper</option>
+        <option value="metal">Metal</option><option value="glass">Glass</option>
+        <option value="e-waste">Electronic Waste</option><option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Quantity (kg)</label><input id="donateQty" type="number" placeholder="e.g. 5"></div>
+    <div class="form-group"><label>Pickup Location</label><input id="donateLoc" type="text" placeholder="Area, City"></div>
+    <div class="form-group"><label>Description</label><textarea id="donateDesc" placeholder="Condition, availability..."></textarea></div>
+    <div class="form-group"><label>Upload Image</label><input id="donateImage" type="file" accept="image/*" style="padding:.4rem"></div>
+    <button id="donateBtn" class="btn btn-primary" onclick="handleAddListing('donate')">
+      <i class="ti ti-gift" aria-hidden="true"></i> Donate Now (+20 pts)
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ DETECT (AI) -->
+<div id="detectPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-cpu" style="color:var(--primary)" aria-hidden="true"></i> AI Waste Detection</h2>
+    <p>Upload an image — our AI will classify the waste type and suggest recycling methods</p>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div id="dropZone">
+        <div class="dz-icon"><i class="ti ti-cloud-upload" aria-hidden="true"></i></div>
+        <p style="color:var(--text-m);margin:.5rem 0">Drop your waste image here, or click to upload</p>
+        <span class="badge badge-green">JPG · PNG · WEBP</span>
+        <input id="fileInput" type="file" accept="image/*" style="display:none">
+      </div>
+      <img id="imgPreview" style="display:none;width:100%;border-radius:12px;margin-top:1rem;max-height:280px;object-fit:cover" alt="preview">
+    </div>
+    <div>
+      <div class="card" style="height:100%">
+        <h4 style="color:var(--text-m);margin-bottom:1rem">How it works</h4>
+        <div class="info-row">
+          <div class="info-icon"><i class="ti ti-camera" aria-hidden="true"></i></div>
+          <div>
+            <strong>Upload Photo</strong>
+            <p style="font-size:.82rem;color:var(--text-m)">Take or upload a clear photo of the waste item</p>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-icon"><i class="ti ti-brain" aria-hidden="true"></i></div>
+          <div>
+            <strong>AI Analysis</strong>
+            <p style="font-size:.82rem;color:var(--text-m)">Our model identifies waste type with confidence score</p>
+          </div>
+        </div>
+        <div class="info-row">
+          <div class="info-icon"><i class="ti ti-recycle" aria-hidden="true"></i></div>
+          <div>
+            <strong>Get Guidance</strong>
+            <p style="font-size:.82rem;color:var(--text-m)">Receive recycling methods and estimated resale value</p>
+          </div>
+        </div>
+        <div style="margin-top:1.2rem;padding:1rem;background:var(--glass);border-radius:10px;font-size:.78rem;color:var(--text-m)">
+          <i class="ti ti-flask" aria-hidden="true"></i>
+          <strong>Model:</strong> CNN-based classifier trained on waste dataset (6 categories).
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="aiResult"></div>
+</div>
+</div>
+
+<!-- ============================================================ PICKUP -->
+<div id="pickupPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-truck" style="color:var(--primary)" aria-hidden="true"></i> Request Pickup</h2>
+    <p>Schedule doorstep waste collection with live GPS location tracking</p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-calendar-plus" aria-hidden="true"></i> New Pickup Request
+      </h4>
+      
+      <!-- Live Location Button -->
+      <div class="location-status" id="pickupLocationStatus">
+        <i class="ti ti-map-pin" aria-hidden="true"></i>
+        <span id="pickupLocationStatusText">Click "Get Live Location" to detect your position</span>
+      </div>
+      
+      <button id="pickupLiveLocationBtn" class="btn btn-location pulse" onclick="getLiveLocation('pickup')" style="width:100%;margin-bottom:1rem;">
+        <i class="ti ti-current-location" aria-hidden="true"></i> Get Live Location
+      </button>
+      
+      <div class="form-group" id="pickupCoordinatesGroup" style="display:none;">
+        <label>GPS Coordinates</label>
+        <div class="coordinates-display" id="pickupCoordinatesDisplay">--</div>
+      </div>
+      
+      <div class="form-group"><label>Waste Type</label>
+        <select id="pickupWaste">
+          <option value="plastic">Plastic</option><option value="paper">Paper</option>
+          <option value="metal">Metal</option><option value="mixed">Mixed</option><option value="e-waste">E-Waste</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Search Location</label>
+        <div style="display:flex;gap:.5rem">
+          <input id="pickupSearchInput" type="text" placeholder="Search address or place..." style="flex:1">
+          <button id="pickupSearchBtn" class="btn btn-secondary btn-sm" type="button">
+            <i class="ti ti-search" aria-hidden="true"></i> Search
+          </button>
+        </div>
+      </div>
+      <div class="form-group"><label>Pickup Address</label><input id="pickupLoc" type="text" placeholder="Click on map or use live location"></div>
+      <div class="form-group"><label>Preferred Date</label><input id="pickupDate" type="date"></div>
+      <button id="pickupBtn" class="btn btn-primary" onclick="handlePickupRequest()">
+        <i class="ti ti-calendar-event" aria-hidden="true"></i> Request Pickup
+      </button>
+    </div>
+    <div>
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-map-pin" aria-hidden="true"></i> Live Location Map
+      </h4>
+      <div id="pickupMapContainer" class="map-container"></div>
+      <p class="map-info-text">
+        <i class="ti ti-info-circle" aria-hidden="true"></i> Click on map, search address, or use "Get Live Location" button
+      </p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:1.5rem">
+    <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+      <i class="ti ti-history" aria-hidden="true"></i> My Pickup History
+    </h4>
+    <div style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>Type</th><th>Location</th><th>Date</th><th>Status</th><th>Map</th></tr></thead>
+        <tbody id="myPickupsTable"><tr><td colspan="5" style="color:var(--text-m)">No requests yet.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ REPORTS -->
+<div id="reportsPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-map-pin" style="color:var(--primary)" aria-hidden="true"></i> Community Reports</h2>
+    <p>Report blocked drains and waste issues with live GPS location tracking</p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-send" aria-hidden="true"></i> Submit a Report (+5 pts)
+      </h4>
+      
+      <!-- Live Location Button -->
+      <div class="location-status" id="reportLocationStatus">
+        <i class="ti ti-map-pin" aria-hidden="true"></i>
+        <span id="reportLocationStatusText">Click "Get Live Location" to detect your position</span>
+      </div>
+      
+      <button id="reportLiveLocationBtn" class="btn btn-location pulse" onclick="getLiveLocation('report')" style="width:100%;margin-bottom:1rem;">
+        <i class="ti ti-current-location" aria-hidden="true"></i> Get Live Location
+      </button>
+      
+      <div class="form-group" id="reportCoordinatesGroup" style="display:none;">
+        <label>GPS Coordinates</label>
+        <div class="coordinates-display" id="reportCoordinatesDisplay">--</div>
+      </div>
+      
+      <div class="form-group"><label>Issue Description</label><textarea id="reportDesc" placeholder="Describe the drainage/waste issue..."></textarea></div>
+      <div class="form-group">
+        <label>Search Location</label>
+        <div style="display:flex;gap:.5rem">
+          <input id="reportSearchInput" type="text" placeholder="Search address or place..." style="flex:1">
+          <button id="reportSearchBtn" class="btn btn-secondary btn-sm" type="button">
+            <i class="ti ti-search" aria-hidden="true"></i> Search
+          </button>
+        </div>
+      </div>
+      <div class="form-group"><label>Location Address</label><input id="reportLoc" type="text" placeholder="Click on map or use live location"></div>
+      <button class="btn btn-primary" onclick="handleReport()">
+        <i class="ti ti-alert-circle" aria-hidden="true"></i> Submit Report
+      </button>
+    </div>
+    <div>
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-map" aria-hidden="true"></i> Select Issue Location
+      </h4>
+      <div id="reportMapContainer" class="map-container"></div>
+      <p class="map-info-text">
+        <i class="ti ti-info-circle" aria-hidden="true"></i> Click on map, search, or use "Get Live Location" button
+      </p>
+    </div>
+  </div>
+  <div style="margin-top:1.5rem">
+    <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+      <i class="ti ti-list" aria-hidden="true"></i> Recent Reports
+    </h4>
+    <div id="reportsList"><p style="color:var(--text-m)">Loading...</p></div>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ RISK PREDICTION -->
+<div id="riskPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-alert-triangle" style="color:var(--danger)" aria-hidden="true"></i> AI Risk Prediction</h2>
+    <p>ML-powered drainage blockage risk scores for your city</p>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div style="display:flex;gap:.8rem;margin-bottom:1.2rem;flex-wrap:wrap">
+        <span class="badge badge-red"><i class="ti ti-circle-filled" aria-hidden="true"></i> HIGH &gt;70</span>
+        <span class="badge badge-warn"><i class="ti ti-circle-filled" aria-hidden="true"></i> MEDIUM 40–70</span>
+        <span class="badge badge-green"><i class="ti ti-circle-filled" aria-hidden="true"></i> LOW &lt;40</span>
+      </div>
+      <div id="riskList"><p style="color:var(--text-m)">Loading predictions...</p></div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-question-mark" aria-hidden="true"></i> How Risk is Predicted
+      </h4>
+      <p style="color:var(--text-m);font-size:.88rem;line-height:1.8">The ML model uses the following inputs to calculate risk scores:</p>
+      <div style="margin:.8rem 0;display:flex;flex-direction:column;gap:.5rem">
+        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-map-pin" aria-hidden="true"></i> Community reports by area</div>
+        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-package" aria-hidden="true"></i> Waste listing density per zone</div>
+        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-history" aria-hidden="true"></i> Historical blockage records</div>
+        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-cloud-rain" aria-hidden="true"></i> Seasonal rainfall patterns</div>
+        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-users" aria-hidden="true"></i> Population density</div>
+      </div>
+      <button class="btn btn-secondary" style="margin-top:1rem;width:100%" onclick="loadRisk()">
+        <i class="ti ti-refresh" aria-hidden="true"></i> Refresh Predictions
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ REWARDS -->
+<div id="rewardsPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-trophy" style="color:var(--accent2)" aria-hidden="true"></i> Rewards &amp; Leaderboard</h2>
+    <p>Your eco-contributions count!</p>
+  </div>
+  <div class="grid-2">
+    <div>
+      <div class="points-display" style="margin-bottom:1.2rem">
+        <div style="font-size:.78rem;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.7);margin-bottom:.5rem">Your Reward Points</div>
+        <div class="points-num" id="rewardPts">0</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.8);margin-top:.4rem">Eco Score: <span id="rewardEco" style="color:#fff;font-weight:700">0</span></div>
+      </div>
+      <div class="card">
+        <h4 style="color:var(--primary);margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem">
+          <i class="ti ti-star" aria-hidden="true"></i> Points Activity
+        </h4>
+        <div style="display:flex;flex-direction:column;gap:.4rem">
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.5rem .7rem;background:var(--glass);border-radius:8px">
+            <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-recycle" aria-hidden="true"></i> Sell listing</span>
+            <span style="color:var(--primary);font-weight:600">+10</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.5rem .7rem;background:var(--glass);border-radius:8px">
+            <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-gift" aria-hidden="true"></i> Donate listing</span>
+            <span style="color:var(--primary);font-weight:600">+20</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.5rem .7rem;background:var(--glass);border-radius:8px">
+            <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-map-pin" aria-hidden="true"></i> Submit report</span>
+            <span style="color:var(--primary);font-weight:600">+5</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.5rem .7rem;background:var(--glass);border-radius:8px">
+            <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-car" aria-hidden="true"></i> Join cleanup drive</span>
+            <span style="color:var(--primary);font-weight:600">+50</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-medal" aria-hidden="true"></i> Top Eco Champions
+      </h4>
+      <div id="leaderboard"><p style="color:var(--text-m)">Loading...</p></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ ANALYTICS -->
+<div id="analyticsPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-chart-bar" style="color:var(--primary)" aria-hidden="true"></i> Analytics Dashboard</h2>
+    <p>Real-time recycling and waste management statistics</p>
+  </div>
+  <div class="grid-3" style="margin-bottom:1.5rem">
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-users" aria-hidden="true"></i></div>
+      <div class="stat-num" id="aUsers">—</div>
+      <div class="stat-label">Total Users</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-clipboard-list" aria-hidden="true"></i></div>
+      <div class="stat-num" id="aListings">—</div>
+      <div class="stat-label">Total Listings</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-gift" aria-hidden="true"></i></div>
+      <div class="stat-num" id="aDonations">—</div>
+      <div class="stat-label">Donations</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-coin" aria-hidden="true"></i></div>
+      <div class="stat-num" id="aSales">—</div>
+      <div class="stat-label">Sales</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon"><i class="ti ti-truck" aria-hidden="true"></i></div>
+      <div class="stat-num" id="aPickups">—</div>
+      <div class="stat-label">Pickups</div>
+    </div>
+    <div class="card stat-card">
+      <div class="stat-icon" style="background:#fcebeb"><i class="ti ti-alert-circle" style="color:var(--danger)" aria-hidden="true"></i></div>
+      <div class="stat-num" id="aReports">—</div>
+      <div class="stat-label">Reports</div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-chart-line" aria-hidden="true"></i> Monthly Recycling Trend
+      </h4>
+      <canvas id="trendChart" height="180"></canvas>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-chart-pie" aria-hidden="true"></i> Waste by Category
+      </h4>
+      <canvas id="wasteChart" height="180"></canvas>
+    </div>
+  </div>
+  <div style="margin-top:1rem;text-align:center">
+    <button class="btn btn-secondary" onclick="loadAnalytics()">
+      <i class="ti ti-refresh" aria-hidden="true"></i> Refresh Data
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ CONTACT -->
+<div id="contactPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-mail" style="color:var(--primary)" aria-hidden="true"></i> Contact Us</h2>
+    <p>Reach out for partnerships, reporting, or support</p>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="form-group"><label>Your Name</label><input type="text" placeholder="Full Name"></div>
+      <div class="form-group"><label>Email</label><input type="email" placeholder="email@example.com"></div>
+      <div class="form-group"><label>Subject</label>
+        <select><option>General Enquiry</option><option>Report an Issue</option><option>Partnership</option><option>Technical Support</option></select>
+      </div>
+      <div class="form-group"><label>Message</label><textarea placeholder="Your message..."></textarea></div>
+      <button class="btn btn-primary" onclick="toast('Message sent! We\'ll respond soon.')">
+        <i class="ti ti-send" aria-hidden="true"></i> Send Message
+      </button>
+    </div>
+    <div class="card">
+      <h4 style="color:var(--primary);margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem">
+        <i class="ti ti-address-book" aria-hidden="true"></i> Get in Touch
+      </h4>
+      <div class="info-row">
+        <div class="info-icon"><i class="ti ti-mail" aria-hidden="true"></i></div>
+        <div>
+          <strong>Email</strong>
+          <p style="color:var(--text-m);font-size:.85rem">vishnumaggam@gmail.com</p>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon"><i class="ti ti-phone" aria-hidden="true"></i></div>
+        <div>
+          <strong>Helpline</strong>
+          <p style="color:var(--text-m);font-size:.85rem">+91  6303735xxx</p>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon"><i class="ti ti-building" aria-hidden="true"></i></div>
+        <div>
+          <strong>Office</strong>
+          <p style="color:var(--text-m);font-size:.85rem">Nellore</p>
+        </div>
+      </div>
+      <div class="info-row">
+        <div class="info-icon"><i class="ti ti-clock" aria-hidden="true"></i></div>
+        <div>
+          <strong>Hours</strong>
+          <p style="color:var(--text-m);font-size:.85rem">Mon–Sat · 9 AM – 6 PM</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ ADMIN LOGIN -->
+<div id="adminLoginPage" class="page">
+<div class="auth-wrap">
+  <div class="card auth-card">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div style="width:56px;height:56px;background:var(--primary-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto .8rem">
+        <i class="ti ti-shield-lock" style="font-size:28px;color:var(--primary)" aria-hidden="true"></i>
+      </div>
+      <h3 style="color:var(--primary);font-family:'Syne',sans-serif">Admin Login</h3>
+    </div>
+    <div class="form-group"><label>Username</label><input id="adminUser" type="text" placeholder="admin"></div>
+    <div class="form-group"><label>Password</label><input id="adminPass" type="password" placeholder="admin123"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="handleAdminLogin()">
+      <i class="ti ti-lock-open" aria-hidden="true"></i> Admin Login
+    </button>
+    <p style="color:var(--text-d);font-size:.75rem;margin-top:.8rem;text-align:center">Default: admin / admin123</p>
+  </div>
+</div>
+</div>
+
+<!-- ============================================================ ADMIN DASHBOARD -->
+<div id="adminDashPage" class="page">
+<div class="container">
+  <div class="section-head">
+    <h2><i class="ti ti-settings" style="color:var(--primary)" aria-hidden="true"></i> Admin Dashboard</h2>
+    <p>Manage users, pickups, and reports</p>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showAdminTab('users',this)">
+      <i class="ti ti-users" aria-hidden="true"></i> Users
+    </button>
+    <button class="tab-btn" onclick="showAdminTab('pickups',this)">
+      <i class="ti ti-truck" aria-hidden="true"></i> Pickups
+    </button>
+    <button class="tab-btn" onclick="showAdminTab('analytics',this)">
+      <i class="ti ti-chart-bar" aria-hidden="true"></i> Analytics
+    </button>
+  </div>
+  <div id="adminTab-users" class="tab-content active">
+    <div class="card" style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Email</th><th>Points</th><th>Joined</th></tr></thead>
+        <tbody id="adminUsersTable"></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="adminTab-pickups" class="tab-content">
+    <div class="card" style="overflow-x:auto">
+      <table class="data-table">
+        <thead><tr><th>User</th><th>Location</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="adminPickupsTable"></tbody>
+      </table>
+    </div>
+  </div>
+  <div id="adminTab-analytics" class="tab-content">
+    <div style="margin-top:1rem">
+      <button class="btn btn-primary" onclick="navigate('analytics')">
+        <i class="ti ti-chart-bar" aria-hidden="true"></i> Open Analytics Dashboard
+      </button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
