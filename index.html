@@ -1,540 +1,536 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Drainage Waste Management System</title>
+<title>SmartDrain – Waste Management</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-
-<!-- Leaflet CSS and JS for OpenStreetMap -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<link rel="stylesheet" href="/static/style.css">
-
 <style>
-  :root {
-    --primary: #0f7b5c;
-    --primary-light: #e1f5ee;
-    --accent: #1dbf8a;
-    --accent2: #f5a623;
-    --danger: #e24b4a;
-    --warn: #ef9f27;
-    --bg: #f4f6f3;
-    --card-bg: #ffffff;
-    --text: #1a2318;
-    --text-m: #4a5568;
-    --text-d: #9aa5b1;
-    --border: rgba(0,0,0,0.08);
-    --glass: rgba(15,123,92,0.06);
-    --nav-h: 64px;
-    --radius: 14px;
-    --shadow: 0 2px 16px rgba(15,123,92,0.08);
-  }
+:root {
+  --primary: #0f7b5c;
+  --primary-light: #e1f5ee;
+  --accent: #1dbf8a;
+  --accent2: #f5a623;
+  --danger: #e24b4a;
+  --warn: #ef9f27;
+  --bg: #f4f6f3;
+  --card-bg: #ffffff;
+  --text: #1a2318;
+  --text-m: #4a5568;
+  --text-d: #9aa5b1;
+  --border: rgba(0,0,0,0.08);
+  --glass: rgba(15,123,92,0.06);
+  --nav-h: 64px;
+  --radius: 14px;
+  --shadow: 0 2px 16px rgba(15,123,92,0.08);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body{
+  font-family:'DM Sans',sans-serif;
+  color:var(--text);
+  min-height:100vh;
+  background: url('/static/bg.png') center center / cover no-repeat fixed;
+}
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:rgba(244,246,243,0.82);
+  pointer-events:none;
+}
 
-  body {
-    font-family: 'DM Sans', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
+/* NAV */
+nav{position:sticky;top:0;z-index:200;height:var(--nav-h);background:rgba(255,255,255,0.97);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem;padding:0 1.5rem}
+.nav-brand{font-family:'Syne',sans-serif;font-weight:800;font-size:1.15rem;display:flex;align-items:center;gap:7px;color:var(--primary);white-space:nowrap;text-decoration:none;cursor:pointer}
+.nav-brand span{color:var(--accent)}
+.nav-links{display:flex;align-items:center;gap:1px;flex:1;flex-wrap:wrap}
+.nav-links button{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;color:var(--text-m);padding:.38rem .6rem;border-radius:7px;transition:all .15s;display:flex;align-items:center;gap:4px}
+.nav-links button:hover,.nav-links button.active{background:var(--glass);color:var(--primary)}
+.nav-actions{display:flex;align-items:center;gap:.5rem;margin-left:auto;flex-shrink:0}
+#userBadge{font-size:.75rem;font-weight:600;color:var(--primary);background:var(--primary-light);border:1px solid rgba(15,123,92,.2);padding:.28rem .7rem;border-radius:20px;display:none}
 
-  /* NAV */
-  nav {
-    position: sticky; top: 0; z-index: 100;
-    height: var(--nav-h);
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; gap: 1rem;
-    padding: 0 2rem;
-  }
-  .nav-brand {
-    font-family: 'Syne', sans-serif;
-    font-weight: 800; font-size: 1.2rem;
-    display: flex; align-items: center; gap: 8px;
-    color: var(--primary);
-    white-space: nowrap;
-  }
-  .nav-brand i { font-size: 20px; }
-  .nav-brand span { color: var(--accent); }
-  .nav-links { display: flex; align-items: center; gap: 2px; flex: 1; flex-wrap: wrap; }
-  .nav-links button {
-    background: none; border: none; cursor: pointer;
-    font-family: 'DM Sans', sans-serif; font-size: .82rem; font-weight: 500;
-    color: var(--text-m); padding: .4rem .7rem; border-radius: 8px;
-    transition: all .15s;
-  }
-  .nav-links button:hover { background: var(--glass); color: var(--primary); }
-  .nav-actions { display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;border:none;cursor:pointer;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:600;transition:all .15s;font-size:.85rem}
+.btn-primary{background:var(--primary);color:#fff;padding:.52rem 1.1rem}
+.btn-primary:hover{background:#0d6b4f;transform:translateY(-1px);box-shadow:0 4px 14px rgba(15,123,92,.25)}
+.btn-secondary{background:var(--glass);color:var(--primary);border:1px solid rgba(15,123,92,.2);padding:.5rem 1rem}
+.btn-secondary:hover{background:var(--primary-light)}
+.btn-danger{background:var(--danger);color:#fff;padding:.5rem 1rem}
+.btn-danger:hover{background:#c43c3b}
+.btn-warn{background:var(--warn);color:#fff;padding:.5rem 1rem}
+.btn-success{background:#1dbf8a;color:#fff;padding:.5rem 1rem}
+.btn-sold{background:#6b7280;color:#fff;padding:.5rem 1rem}
+.btn-sold:hover{background:#4b5563}
+.btn-location{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:.52rem 1.1rem}
+.btn-location:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(102,126,234,.3)}
+.btn-sm{padding:.3rem .7rem;font-size:.75rem;border-radius:8px}
+.btn:disabled{opacity:.6;cursor:not-allowed;transform:none!important}
 
-  /* BUTTONS */
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px;
-    border: none; cursor: pointer; border-radius: 10px;
-    font-family: 'DM Sans', sans-serif; font-weight: 500;
-    transition: all .15s; padding: .55rem 1.2rem; font-size: .88rem;
-  }
-  .btn i { font-size: 16px; }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-primary:hover { background: #0d6b4f; transform: translateY(-1px); }
-  .btn-secondary { background: var(--glass); color: var(--primary); border: 1px solid rgba(15,123,92,0.2); }
-  .btn-secondary:hover { background: var(--primary-light); }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-danger:hover { background: #c43c3b; }
-  .btn-sm { padding: .35rem .8rem; font-size: .78rem; }
-  .btn-warn { background: var(--warn); color: #fff; }
-  .btn-location {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
-    border: none;
-  }
-  .btn-location:hover {
-    background: linear-gradient(135deg, #5a6fd6 0%, #6a4192 100%);
-    transform: translateY(-1px);
-  }
-  .btn-location:disabled {
-    background: #ccc;
-    cursor: not-allowed;
-  }
-  .btn-location.pulse {
-    animation: pulse 2s infinite;
-  }
+/* PAGES */
+.page{display:none;min-height:calc(100vh - var(--nav-h))}
+.page.active{display:block}
 
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
-  }
+/* HERO */
+.hero{
+  position:relative;
+  overflow:hidden;
+  min-height:88vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  text-align:center;
+  padding:4rem 2rem;
+}
+.hero::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:rgba(12, 192, 63, 0.032);
+  z-index:0;
+}
+.hero > *{position:relative;z-index:1;}
+.hero h1{font-family:'Syne',sans-serif;font-size:clamp(2.4rem,5.5vw,4.2rem);font-weight:800;color:var(--primary);line-height:1.08;margin-bottom:1rem}
+.hero-sub{color:var(--text-m);max-width:520px;margin:0 auto 2rem;font-size:.97rem;line-height:1.8}
+.hero-tag{display:inline-flex;align-items:center;gap:6px;background:var(--primary);border-radius:50px;padding:.38rem 1rem;font-size:.75rem;color:rgba(255,255,255,.92);letter-spacing:.5px;margin-bottom:1.4rem}
+.hero-btns{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap}
+.hero-btns .btn-primary{background:#fff;color:var(--primary);font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.hero-btns .btn-primary:hover{background:#f0fdf8}
+.hero-btns .btn-secondary{border-color:rgba(255,255,255,.5);color:#0f7b5c;background:rgba(255,255,255,.6)}
+.floating-icons{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.fi{position:absolute;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.5);border:1px solid rgba(15,123,92,.15);color:rgba(15,123,92,.5);font-size:20px;animation:floatIcon 6s ease-in-out infinite}
+.fi:nth-child(1){top:8%;left:5%;animation-delay:0s}.fi:nth-child(2){top:16%;left:17%;animation-delay:.7s}
+.fi:nth-child(3){top:7%;right:11%;animation-delay:1.4s}.fi:nth-child(4){top:21%;right:5%;animation-delay:.3s}
+.fi:nth-child(5){bottom:17%;left:4%;animation-delay:2s}.fi:nth-child(6){bottom:9%;left:19%;animation-delay:1s}
+.fi:nth-child(7){bottom:19%;right:7%;animation-delay:1.8s}.fi:nth-child(8){bottom:7%;right:21%;animation-delay:.5s}
+@keyframes floatIcon{0%,100%{transform:translateY(0) rotate(0deg);opacity:.4}50%{transform:translateY(-10px) rotate(4deg);opacity:.85}}
 
-  /* PAGE SYSTEM */
-  .page { display: none; min-height: calc(100vh - var(--nav-h)); }
-  .page.active { display: block; }
+/* CONTAINER */
+.container{max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem}
+.section-head{text-align:center;margin-bottom:2rem}
+.section-head h2{font-family:'Syne',sans-serif;font-size:clamp(1.55rem,3vw,2.1rem);font-weight:700;color:var(--text);margin-bottom:.4rem}
+.section-head p{color:var(--text-m);font-size:.92rem}
 
-  /* HERO */
-  .hero {
-    position: relative; overflow: hidden;
-    background: linear-gradient(135deg, #0a4f3a01 0%, #0f7b5c4f 50%, #1dbf8a 100%);
-    min-height: 90vh; display: flex; align-items: center; justify-content: center;
-    flex-direction: column; text-align: center; padding: 4rem 2rem;
-  }
-  .hero h1 {
-    font-family: 'Syne', sans-serif; font-size: clamp(2.5rem,6vw,4.5rem);
-    font-weight: 800; color:#0f7b5c; line-height: 1.1; margin-bottom: 1.2rem;
-  }
-  .hero p {  display: inline-flex; align-items: center; gap: 6px;
-    background:#ffffff; border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 50px; padding: .4rem 1rem; font-size: .78rem;
-    color:#0f7b5c; letter-spacing: .5px; margin-bottom: 1.5rem;}
-  .hero-tag {
-    display: inline-flex; align-items: center; gap: 6px;
-    background:#0f7b5c; border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 50px; padding: .4rem 1rem; font-size: .78rem;
-    color: rgba(255,255,255,0.9); letter-spacing: .5px; margin-bottom: 1.5rem;
-  }
-  .hero-btns { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-  .hero-btns .btn-primary { background: #fff; color: var(--primary); font-weight: 600; }
-  .hero-btns .btn-primary:hover { background: #e8f5f0; }
-  .hero-btns .btn-secondary { border-color: rgba(255, 255, 255, 0.847); color: #ffffff; background: #0f7b5c; }
-  .hero-btns .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+/* CARDS */
+.card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem 1.5rem;box-shadow:var(--shadow)}
+.card h3,.card h4{font-family:'Syne',sans-serif;font-weight:600}
 
-  /* Floating icons grid */
-  .floating-icons {
-    position: absolute; inset: 0; overflow: hidden; pointer-events: none;
-  }
-  .fi {
-    position: absolute;
-    display: flex; align-items: center; justify-content: center;
-    width: 52px; height: 52px; border-radius: 14px;
-    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.6); font-size: 22px;
-    animation: floatIcon 6s ease-in-out infinite;
-  }
-  .fi:nth-child(1) { top:8%; left:6%; animation-delay:0s; }
-  .fi:nth-child(2) { top:15%; left:18%; animation-delay:.7s; }
-  .fi:nth-child(3) { top:6%; right:12%; animation-delay:1.4s; }
-  .fi:nth-child(4) { top:22%; right:6%; animation-delay:.3s; }
-  .fi:nth-child(5) { bottom:18%; left:5%; animation-delay:2s; }
-  .fi:nth-child(6) { bottom:10%; left:20%; animation-delay:1s; }
-  .fi:nth-child(7) { bottom:20%; right:8%; animation-delay:1.8s; }
-  .fi:nth-child(8) { bottom:8%; right:22%; animation-delay:.5s; }
-  @keyframes floatIcon {
-    0%,100% { transform: translateY(0) rotate(0deg); opacity:.5; }
-    50% { transform: translateY(-12px) rotate(4deg); opacity:.9; }
-  }
+/* GRIDS */
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:1.1rem}
+.grid-3{display:grid;grid-template-columns:repeat(auto-fit,minmax(195px,1fr));gap:1rem}
+.grid-4{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:1rem}
 
-  /* CONTAINER */
-  .container { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem; }
-  .section-head { text-align: center; margin-bottom: 2.5rem; }
-  .section-head h2 {
-    font-family: 'Syne', sans-serif; font-size: clamp(1.6rem,3vw,2.2rem);
-    font-weight: 700; color: var(--text); margin-bottom: .5rem;
-  }
-  .section-head p { color: var(--text-m); font-size: .95rem; }
+/* STAT CARDS */
+.stat-card{text-align:center;padding:1.4rem 1rem}
+.stat-icon{width:50px;height:50px;border-radius:13px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;margin:0 auto .75rem}
+.stat-icon i{font-size:22px;color:var(--primary)}
+.stat-num{font-family:'Syne',sans-serif;font-size:1.9rem;font-weight:700;color:var(--primary)}
+.stat-label{font-size:.75rem;color:var(--text-m);margin-top:.2rem;text-transform:uppercase;letter-spacing:.5px}
 
-  /* CARDS */
-  .card {
-    background: var(--card-bg); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 1.4rem 1.6rem;
-    box-shadow: var(--shadow);
-  }
-  .card h3, .card h4 { font-family: 'Syne', sans-serif; font-weight: 600; }
+/* FORM */
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:.78rem;font-weight:600;color:var(--text-m);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:.58rem .85rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.88rem;background:var(--card-bg);color:var(--text);transition:border .15s;outline:none}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(29,191,138,.12)}
+.form-group textarea{resize:vertical;min-height:85px}
 
-  /* GRIDS */
-  .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap: 1.2rem; }
-  .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px,1fr)); gap: 1rem; }
-  .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr)); gap: 1rem; }
+/* AUTH */
+.auth-wrap{min-height:calc(100vh - var(--nav-h));display:flex;align-items:center;justify-content:center;padding:2rem}
+.auth-card{width:100%;max-width:420px}
+.auth-tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:1.4rem}
+.auth-tab{flex:1;text-align:center;padding:.65rem;font-size:.88rem;font-weight:500;cursor:pointer;color:var(--text-m);border-bottom:2.5px solid transparent;transition:all .15s}
+.auth-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
 
-  /* STAT CARDS */
-  .stat-card { text-align: center; padding: 1.5rem 1rem; }
-  .stat-icon {
-    width: 52px; height: 52px; border-radius: 14px;
-    background: var(--primary-light); display: flex; align-items: center;
-    justify-content: center; margin: 0 auto .8rem;
-  }
-  .stat-icon i { font-size: 24px; color: var(--primary); }
-  .stat-num { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 700; color: var(--primary); }
-  .stat-label { font-size: .8rem; color: var(--text-m); margin-top: .2rem; }
+/* TOAST */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;background:var(--text);color:#fff;padding:.7rem 1.2rem;border-radius:10px;font-size:.85rem;opacity:0;pointer-events:none;transition:opacity .3s;max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+#toast.show{opacity:1}
+#toast.error{background:var(--danger)}
 
-  /* FORM */
-  .form-group { margin-bottom: 1rem; }
-  .form-group label { display: block; font-size: .82rem; font-weight: 500; color: var(--text-m); margin-bottom: .35rem; }
-  .form-group input, .form-group select, .form-group textarea {
-    width: 100%; padding: .6rem .85rem; border: 1px solid var(--border);
-    border-radius: 10px; font-family: 'DM Sans', sans-serif; font-size: .9rem;
-    background: var(--card-bg); color: var(--text); transition: border .15s;
-  }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-    outline: none; border-color: var(--accent);
-  }
-  .form-group textarea { resize: vertical; min-height: 90px; }
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:.22rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600}
+.badge-green{background:var(--primary-light);color:var(--primary)}
+.badge-red{background:#fcebeb;color:var(--danger)}
+.badge-warn{background:#faeeda;color:#854f0b}
+.badge-blue{background:#e8f0ff;color:#3b60e4}
+.badge-purple{background:#f0e8ff;color:#7c3aed}
+.badge-sold{background:#f1f5f9;color:#475569;border:1px solid #cbd5e1}
 
-  /* AUTH */
-  .auth-wrap { min-height: calc(100vh - var(--nav-h)); display: flex; align-items: center; justify-content: center; padding: 2rem; }
-  .auth-card { width: 100%; max-width: 420px; }
-  .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
-  .auth-tab { flex: 1; text-align: center; padding: .7rem; font-size: .9rem; font-weight: 500; cursor: pointer; color: var(--text-m); border-bottom: 2px solid transparent; transition: all .15s; }
-  .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+/* TABS */
+.tabs,.tab-row{display:flex;gap:.4rem;margin-bottom:1.1rem;flex-wrap:wrap}
+.tab-btn{background:none;border:1.5px solid var(--border);cursor:pointer;padding:.38rem .85rem;border-radius:8px;font-size:.8rem;font-family:'DM Sans',sans-serif;color:var(--text-m);font-weight:500;transition:all .15s}
+.tab-btn.active,.tab-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.tab-content{display:none}
+.tab-content.active{display:block}
 
-  /* TOAST */
-  #toast {
-    position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 9999;
-    background: var(--text); color: #fff; padding: .75rem 1.2rem;
-    border-radius: 10px; font-size: .88rem; opacity: 0; pointer-events: none;
-    transition: opacity .3s; max-width: 320px;
-  }
-  #toast.show { opacity: 1; }
+/* TABLE */
+.data-table{width:100%;border-collapse:collapse;font-size:.83rem}
+.data-table th{text-align:left;padding:.6rem .85rem;color:var(--text-m);font-weight:600;border-bottom:1.5px solid var(--border);font-size:.74rem;text-transform:uppercase;letter-spacing:.5px;background:#fafafa}
+.data-table td{padding:.6rem .85rem;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:#fafffe}
+.table-img{width:52px;height:52px;object-fit:cover;border-radius:8px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.table-img img{width:52px;height:52px;object-fit:cover;border-radius:8px}
 
-  /* BADGES */
-  .badge { display: inline-flex; align-items: center; gap: 4px; padding: .25rem .6rem; border-radius: 6px; font-size: .75rem; font-weight: 500; }
-  .badge-green { background: var(--primary-light); color: var(--primary); }
-  .badge-red { background: #fcebeb; color: var(--danger); }
-  .badge-warn { background: #faeeda; color: #854f0b; }
+/* DROP ZONE */
+#dropZone{border:2px dashed rgba(15,123,92,.3);border-radius:var(--radius);padding:2.5rem;text-align:center;cursor:pointer;transition:all .2s;background:#fafffe}
+#dropZone:hover{border-color:var(--accent);background:var(--primary-light)}
+.dz-icon{font-size:3rem;color:var(--primary);margin-bottom:.5rem}
 
-  /* TABS */
-  .tabs, .tab-row { display: flex; gap: .5rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
-  .tab-btn {
-    background: none; border: 1px solid var(--border); cursor: pointer;
-    padding: .4rem .9rem; border-radius: 8px; font-size: .82rem;
-    font-family: 'DM Sans', sans-serif; color: var(--text-m); font-weight: 500;
-    transition: all .15s;
-  }
-  .tab-btn.active, .tab-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
-  .tab-content { display: none; }
-  .tab-content.active { display: block; }
+/* POINTS */
+.points-display{background:linear-gradient(135deg,var(--primary),var(--accent));border-radius:var(--radius);padding:2rem;text-align:center;color:#fff}
+.points-num{font-family:'Syne',sans-serif;font-size:3.2rem;font-weight:800}
 
-  /* TABLE */
-  .data-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
-  .data-table th { text-align: left; padding: .6rem .8rem; color: var(--text-m); font-weight: 500; border-bottom: 1px solid var(--border); font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; }
-  .data-table td { padding: .6rem .8rem; border-bottom: 1px solid var(--border); color: var(--text); }
-  .data-table tr:last-child td { border-bottom: none; }
+/* LEADERBOARD */
+.lb-row{display:flex;align-items:center;gap:1rem;padding:.7rem .85rem;border-radius:10px;margin-bottom:.4rem;background:var(--glass);border:1px solid transparent;transition:border .15s}
+.lb-row:hover{border-color:var(--accent)}
+.lb-rank{font-family:'Syne',sans-serif;font-weight:700;font-size:1.05rem;width:28px;color:var(--primary)}
+.lb-name{flex:1;font-weight:500;font-size:.88rem}
+.lb-pts{color:var(--primary);font-weight:700;font-size:.85rem}
 
-  /* DROP ZONE */
-  #dropZone {
-    border: 2px dashed rgba(15,123,92,0.3); border-radius: var(--radius);
-    padding: 2.5rem; text-align: center; cursor: pointer; transition: all .2s;
-    background: var(--card-bg);
-  }
-  #dropZone:hover { border-color: var(--accent); background: var(--primary-light); }
-  .dz-icon { font-size: 3rem; color: var(--primary); margin-bottom: .5rem; }
-  .dz-icon i { font-size: 48px; }
+/* LISTING CARD */
+.listing-card{background:var(--card-bg);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:all .2s;cursor:pointer;position:relative}
+.listing-card:hover{border-color:var(--accent);box-shadow:0 8px 24px rgba(15,123,92,.12);transform:translateY(-2px)}
+.listing-card.sold-card{opacity:.75}
+.listing-img{width:100%;height:155px;object-fit:cover;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:3rem;overflow:hidden}
+.listing-img img{width:100%;height:100%;object-fit:cover}
+.listing-body{padding:1rem}
+.listing-type-badge{position:absolute;top:10px;left:10px;padding:.2rem .55rem;border-radius:6px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.badge-sell{background:#fff3e0;color:#e65100;border:1px solid #ffe0b2}
+.badge-donate{background:#e8f5e9;color:#1b5e20;border:1px solid #c8e6c9}
+.badge-buy{background:#e3f2fd;color:#0d47a1;border:1px solid #bbdefb}
+.listing-title{font-family:'Syne',sans-serif;font-weight:600;font-size:.95rem;margin-bottom:.3rem;color:var(--text);line-height:1.3}
+.listing-price{font-family:'DM Mono',monospace;font-size:1.05rem;font-weight:600;color:var(--primary);margin-bottom:.4rem}
+.listing-meta{font-size:.76rem;color:var(--text-m);display:flex;flex-direction:column;gap:.2rem}
+.listing-meta span{display:flex;align-items:center;gap:4px}
+.listing-footer{display:flex;justify-content:space-between;align-items:center;padding:.7rem 1rem;border-top:1px solid var(--border);background:#fafffe;flex-wrap:wrap;gap:.4rem}
+.views-count{font-size:.72rem;color:var(--text-d);display:flex;align-items:center;gap:3px}
+.wishlist-btn{background:none;border:none;cursor:pointer;font-size:1.1rem;padding:.15rem .3rem;border-radius:6px;transition:all .15s;color:var(--text-d)}
+.wishlist-btn.saved{color:#e24b4a}
+.wishlist-btn:hover{transform:scale(1.2)}
+/* Sold overlay */
+.sold-overlay{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:2;border-radius:var(--radius)}
+.sold-stamp{background:#e24b4a;color:#fff;font-family:'Syne',sans-serif;font-weight:800;font-size:1.4rem;padding:.5rem 1.4rem;border-radius:8px;transform:rotate(-12deg);letter-spacing:2px;border:3px solid #fff}
 
-  /* RISK ITEMS */
-  .risk-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: .85rem 1rem; background: var(--card-bg); border: 1px solid var(--border);
-    border-radius: 10px; margin-bottom: .6rem;
-  }
-  .risk-bar-wrap { flex: 1; margin: 0 1rem; }
-  .risk-bar { height: 6px; border-radius: 3px; background: var(--primary-light); overflow: hidden; }
-  .risk-bar-fill { height: 100%; border-radius: 3px; transition: width .4s; }
+/* INFO ROW */
+.info-row{display:flex;gap:.8rem;align-items:flex-start;padding:.75rem 0;border-bottom:1px solid var(--border)}
+.info-row:last-child{border-bottom:none}
+.info-icon{width:38px;height:38px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.info-icon i{font-size:18px;color:var(--primary)}
 
-  /* POINTS DISPLAY */
-  .points-display {
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    border-radius: var(--radius); padding: 2rem; text-align: center; color: #fff;
-  }
-  .points-num { font-family: 'Syne', sans-serif; font-size: 3.5rem; font-weight: 800; }
+/* AI RESULT */
+#aiResult{margin-top:1.5rem}
+.ai-result-card{background:var(--card-bg);border:1.5px solid var(--accent);border-radius:var(--radius);padding:1.5rem;border-left:4px solid var(--accent)}
 
-  /* LEADERBOARD */
-  .lb-row {
-    display: flex; align-items: center; gap: 1rem;
-    padding: .75rem .8rem; border-radius: 10px; margin-bottom: .4rem;
-    background: var(--glass);
-  }
-  .lb-rank { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1.1rem; width: 28px; color: var(--primary); }
-  .lb-name { flex: 1; font-weight: 500; }
-  .lb-pts { color: var(--primary); font-weight: 600; }
+/* PRICE VERDICT */
+.price-verdict{border-radius:12px;padding:1rem 1.2rem;margin-top:.8rem;display:flex;gap:.8rem;align-items:flex-start}
+.price-verdict.fair{background:#e8f5e9;border:1.5px solid #4caf50}
+.price-verdict.underpriced,.price-verdict.too_low{background:#fff3e0;border:1.5px solid #ff9800}
+.price-verdict.overpriced{background:#fcebeb;border:1.5px solid #e24b4a}
+.price-verdict-icon{font-size:1.5rem;flex-shrink:0}
+.price-verdict-body h5{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;margin-bottom:.2rem}
+.price-verdict-body p{font-size:.82rem;color:var(--text-m);line-height:1.5}
+.price-verdict-body .suggested{font-family:'DM Mono',monospace;font-size:.88rem;font-weight:600;color:var(--primary);margin-top:.4rem}
 
-  /* MARKETPLACE CARD */
-  .listing-card {
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-    overflow: hidden; box-shadow: var(--shadow); transition: transform .2s;
-  }
-  .listing-card:hover { transform: translateY(-3px); }
-  .listing-img { width: 100%; height: 160px; object-fit: cover; background: var(--primary-light); display: flex; align-items: center; justify-content: center; }
-  .listing-img i { font-size: 48px; color: var(--primary); opacity: .4; }
-  .listing-body { padding: 1rem; }
-  .listing-type { font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--primary); margin-bottom: .3rem; }
-  .listing-title { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 1rem; margin-bottom: .4rem; }
-  .listing-meta { font-size: .8rem; color: var(--text-m); }
+/* WASTE DETECT INLINE */
+.inline-detect-result{background:var(--primary-light);border:1.5px solid var(--accent);border-radius:10px;padding:.85rem 1rem;margin-top:.6rem;display:none;align-items:center;gap:.8rem}
+.inline-detect-result .det-icon{font-size:2rem}
+.inline-detect-result .det-info{flex:1}
+.inline-detect-result .det-info strong{font-size:.9rem;color:var(--primary);display:block}
+.inline-detect-result .det-info span{font-size:.78rem;color:var(--text-m)}
 
-  /* INFO ROW */
-  .info-row { display: flex; gap: .8rem; align-items: flex-start; padding: .8rem 0; border-bottom: 1px solid var(--border); }
-  .info-row:last-child { border-bottom: none; }
-  .info-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-  .info-icon i { font-size: 20px; color: var(--primary); }
+/* PILL ROW */
+.pill-row{display:flex;gap:.5rem;flex-wrap:wrap;margin:.5rem 0}
+.pill{background:var(--primary-light);color:var(--primary);padding:.22rem .65rem;border-radius:50px;font-size:.75rem;font-weight:600}
 
-  /* AI RESULT */
-  #aiResult { margin-top: 1.5rem; }
-  .ai-result-card {
-    background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 1.5rem; border-left: 4px solid var(--accent);
-  }
+/* MAP */
+.map-container{height:320px;border-radius:12px;border:1.5px solid var(--border);background:#e8eaed}
+.location-status{display:flex;align-items:center;gap:.5rem;padding:.45rem .7rem;background:var(--glass);border-radius:8px;font-size:.78rem;color:var(--text-m);margin-bottom:.6rem;border:1px solid var(--border)}
+.location-status.active{background:var(--primary-light);color:var(--primary);border-color:rgba(15,123,92,.3)}
+.coordinates-display{font-family:'DM Mono',monospace;font-size:.73rem;color:var(--text-m);padding:.3rem .6rem;background:var(--glass);border-radius:6px;line-height:1.6}
+.map-info-text{font-size:.75rem;color:var(--text-d);text-align:center;margin-top:.4rem}
 
-  /* PILL ROW */
-  .pill-row { display: flex; gap: .5rem; flex-wrap: wrap; margin: .6rem 0; }
-  .pill { background: var(--primary-light); color: var(--primary); padding: .25rem .7rem; border-radius: 50px; font-size: .78rem; font-weight: 500; }
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--card-bg);border-radius:var(--radius);padding:2rem;width:100%;max-width:560px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.2)}
+.modal h3{font-family:'Syne',sans-serif;font-weight:700;font-size:1.2rem;margin-bottom:1.2rem;color:var(--text);display:flex;justify-content:space-between;align-items:center}
+.modal-close-btn{background:none;border:none;cursor:pointer;font-size:1.2rem;color:var(--text-d);line-height:1}
+.modal-close-btn:hover{color:var(--text)}
 
-  /* REPORT ITEM */
-  .report-item {
-    padding: .9rem 1rem; background: var(--card-bg); border: 1px solid var(--border);
-    border-radius: 10px; margin-bottom: .6rem;
-  }
-  .report-meta { font-size: .75rem; color: var(--text-d); margin-top: .3rem; display: flex; gap: .5rem; align-items: center; }
-  
-  /* MAP STYLES */
-  .map-container {
-    height: 400px;
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    margin-bottom: 0.5rem;
-    z-index: 1;
-    background: #e8e8e8;
-  }
-  
-  .map-controls {
-    display: flex;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-    flex-wrap: wrap;
-  }
-  
-  .map-info-text {
-    font-size: .78rem;
-    color: var(--text-m);
-    text-align: center;
-    margin-top: 0.5rem;
-  }
-  
-  .location-status {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    background: var(--glass);
-    border-radius: 8px;
-    font-size: 0.8rem;
-    color: var(--text-m);
-    margin-bottom: 0.5rem;
-  }
-  
-  .location-status i {
-    color: var(--primary);
-  }
-  
-  .location-status.active {
-    background: var(--primary-light);
-    color: var(--primary);
-  }
-  
-  .coordinates-display {
-    font-family: monospace;
-    font-size: 0.75rem;
-    color: var(--text-m);
-    padding: 0.25rem 0.5rem;
-    background: var(--glass);
-    border-radius: 4px;
-  }
+/* REPORT ITEM */
+.report-item{padding:.9rem 1rem;background:var(--card-bg);border:1px solid var(--border);border-radius:10px;margin-bottom:.6rem;transition:border .15s}
+.report-item:hover{border-color:var(--accent)}
+.report-meta{font-size:.74rem;color:var(--text-d);margin-top:.3rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+
+/* STAR RATING */
+.star-rating{display:flex;gap:4px;font-size:1.3rem;cursor:pointer}
+.star-rating span{color:#ddd;transition:color .15s}
+.star-rating span.active,.star-rating span:hover{color:#f5a623}
+
+/* COMPLETION IMAGE */
+.completion-img-wrap{position:relative;border-radius:10px;overflow:hidden;margin-top:.8rem}
+.completion-img-wrap img{width:100%;border-radius:10px;border:2px solid var(--accent)}
+.completion-badge{position:absolute;top:8px;right:8px;background:#1dbf8a;color:#fff;font-size:.72rem;font-weight:700;padding:.2rem .6rem;border-radius:6px;text-transform:uppercase;letter-spacing:.5px}
+
+/* REPORT IMAGE (user uploaded) */
+.report-img-preview{width:100%;max-height:200px;object-fit:cover;border-radius:10px;border:2px solid var(--border);margin-top:.5rem}
+
+/* SEARCH BAR */
+.search-bar{display:flex;gap:.5rem;margin-bottom:1.2rem;flex-wrap:wrap;align-items:center}
+.search-bar input{flex:1;min-width:200px;padding:.58rem .9rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.88rem;background:var(--card-bg);outline:none;transition:border .15s}
+.search-bar input:focus{border-color:var(--accent)}
+.search-bar select{padding:.58rem .75rem;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.85rem;background:var(--card-bg);outline:none;cursor:pointer;color:var(--text-m)}
+
+/* MESSAGE */
+.msg-bubble{padding:.65rem .9rem;border-radius:10px;font-size:.85rem;max-width:75%;margin-bottom:.5rem;line-height:1.5}
+.msg-out{background:var(--primary);color:#fff;margin-left:auto;border-bottom-right-radius:3px}
+.msg-in{background:#f0f0f0;color:var(--text);border-bottom-left-radius:3px}
+.msg-time{font-size:.68rem;opacity:.7;margin-top:.2rem}
+.messages-box{height:280px;overflow-y:auto;padding:.8rem;display:flex;flex-direction:column}
+.msg-input-row{display:flex;gap:.5rem;padding:.7rem;border-top:1px solid var(--border)}
+.msg-input-row input{flex:1;padding:.5rem .8rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none}
+.msg-input-row input:focus{border-color:var(--accent)}
+
+/* NOTIFY BUBBLE */
+.notify-bubble{position:absolute;top:-4px;right:-4px;background:var(--danger);color:#fff;font-size:.6rem;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;border:2px solid #fff}
+
+/* PAGINATION */
+.pagination{display:flex;gap:.3rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap}
+.page-btn{padding:.35rem .75rem;border:1.5px solid var(--border);border-radius:8px;background:var(--card-bg);cursor:pointer;font-size:.8rem;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--text-m);transition:all .15s}
+.page-btn.active,.page-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* INTEREST LIST */
+.interest-row{display:flex;align-items:center;gap:.8rem;padding:.7rem .85rem;background:var(--glass);border-radius:9px;margin-bottom:.4rem;border:1px solid var(--border)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:3rem 2rem;color:var(--text-m)}
+.empty-state i{font-size:3rem;opacity:.3;display:block;margin-bottom:.8rem}
+.empty-state p{font-size:.9rem}
+
+/* ECO IMPACT WIDGET */
+.eco-impact-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:.7rem;margin-top:.8rem}
+.eco-impact-item{background:var(--glass);border:1px solid rgba(15,123,92,.15);border-radius:10px;padding:.85rem;text-align:center}
+.eco-impact-item .val{font-family:'Syne',sans-serif;font-size:1.4rem;font-weight:700;color:var(--primary)}
+.eco-impact-item .lbl{font-size:.72rem;color:var(--text-m);margin-top:.2rem}
+
+/* PULSE animation */
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(102,126,234,.4)}70%{box-shadow:0 0 0 10px rgba(102,126,234,0)}100%{box-shadow:0 0 0 0 rgba(102,126,234,0)}}
+.btn-location.pulse{animation:pulse 2s infinite}
+.loader{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ADMIN ONLY notice */
+.admin-only-notice{text-align:center;padding:4rem 2rem;color:var(--text-m)}
+.admin-only-notice i{font-size:3rem;color:var(--accent2);display:block;margin-bottom:1rem}
+.admin-only-notice h3{font-family:'Syne',sans-serif;font-size:1.3rem;color:var(--text);margin-bottom:.5rem}
+
+/* FILTER CHIPS */
+.filter-chips{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem}
+.chip{padding:.28rem .75rem;border-radius:50px;font-size:.76rem;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--card-bg);color:var(--text-m);transition:all .15s}
+.chip.active,.chip:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+
+/* ECO PROFILE RING */
+.eco-ring{width:90px;height:90px;border-radius:50%;background:conic-gradient(var(--accent) 0%,var(--primary-light) 0%);display:flex;align-items:center;justify-content:center;flex-direction:column;border:3px solid var(--primary-light)}
+.eco-ring-inner{width:68px;height:68px;border-radius:50%;background:var(--card-bg);display:flex;align-items:center;justify-content:center;flex-direction:column}
+.eco-ring-inner span{font-family:'Syne',sans-serif;font-size:.9rem;font-weight:700;color:var(--primary);line-height:1}
+.eco-ring-inner small{font-size:.6rem;color:var(--text-d)}
+
+/* Admin reports table image cell */
+.report-thumb{width:60px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;border:1.5px solid var(--border)}
+.report-thumb:hover{border-color:var(--accent)}
+.no-img{width:60px;height:50px;background:var(--glass);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:var(--text-d);text-align:center}
+
+/* Image preview modal */
+#imgViewModal .modal{max-width:700px;padding:1rem}
+#imgViewModal img{width:100%;border-radius:10px}
 </style>
 </head>
 <body>
-
 <div id="toast"></div>
+
+<!-- MODALS -->
+<div id="listingModal" class="modal-overlay">
+  <div class="modal">
+    <h3 id="modalTitle">Listing Detail <button class="modal-close-btn" onclick="closeModal('listingModal')"><i class="ti ti-x"></i></button></h3>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<div id="messageModal" class="modal-overlay">
+  <div class="modal" style="max-width:480px">
+    <h3>Messages <button class="modal-close-btn" onclick="closeModal('messageModal')"><i class="ti ti-x"></i></button></h3>
+    <div id="chatHeader" style="font-size:.8rem;color:var(--text-m);margin-bottom:.5rem"></div>
+    <div class="messages-box" id="chatMessages"></div>
+    <div class="msg-input-row">
+      <input id="chatInput" type="text" placeholder="Type a message…" onkeypress="if(event.key==='Enter')sendChatMsg()">
+      <button class="btn btn-primary btn-sm" onclick="sendChatMsg()"><i class="ti ti-send"></i></button>
+    </div>
+  </div>
+</div>
+
+<div id="completeReportModal" class="modal-overlay">
+  <div class="modal" style="max-width:480px">
+    <h3>Complete Report <button class="modal-close-btn" onclick="closeModal('completeReportModal')"><i class="ti ti-x"></i></button></h3>
+    <div class="form-group"><label>Completion Image</label><input type="file" id="completionImageInput" accept="image/*"></div>
+    <div id="completionPreview"></div>
+    <div class="form-group" style="margin-top:.8rem"><label>Admin Notes</label><textarea id="completionNotes" placeholder="Describe what was done…"></textarea></div>
+    <button class="btn btn-success" style="width:100%" onclick="submitCompletion()"><i class="ti ti-check"></i> Mark as Resolved</button>
+  </div>
+</div>
+
+<div id="rateModal" class="modal-overlay">
+  <div class="modal" style="max-width:400px">
+    <h3>Rate Completion <button class="modal-close-btn" onclick="closeModal('rateModal')"><i class="ti ti-x"></i></button></h3>
+    <p style="color:var(--text-m);font-size:.88rem;margin-bottom:1rem">How satisfied are you with the resolution?</p>
+    <div class="star-rating" id="starRating">
+      <span data-v="1">★</span><span data-v="2">★</span><span data-v="3">★</span><span data-v="4">★</span><span data-v="5">★</span>
+    </div>
+    <div id="rateLabel" style="font-size:.82rem;color:var(--text-m);margin:.6rem 0"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:.8rem" onclick="submitRating()"><i class="ti ti-star"></i> Submit Rating</button>
+  </div>
+</div>
+
+<div id="interestsModal" class="modal-overlay">
+  <div class="modal">
+    <h3>Interested Buyers <button class="modal-close-btn" onclick="closeModal('interestsModal')"><i class="ti ti-x"></i></button></h3>
+    <div id="interestsList"></div>
+  </div>
+</div>
+
+<!-- Image view modal -->
+<div id="imgViewModal" class="modal-overlay">
+  <div class="modal" style="max-width:700px;padding:1rem">
+    <h3 style="font-size:.95rem">Report Image <button class="modal-close-btn" onclick="closeModal('imgViewModal')"><i class="ti ti-x"></i></button></h3>
+    <img id="imgViewSrc" src="" alt="Report image" style="width:100%;border-radius:10px;margin-top:.5rem">
+  </div>
+</div>
 
 <!-- NAVBAR -->
 <nav>
-  <div class="nav-brand">
-    <i class="ti ti-droplet-half-2" aria-hidden="true"></i>
-    Smart<span>Drain</span>
+  <div class="nav-brand" onclick="navigate('hero')">
+    <i class="ti ti-droplet-half-2"></i>Smart<span>Drain</span>
   </div>
   <div class="nav-links">
-    <button data-page="hero"        onclick="navigate('hero')"><i class="ti ti-home" aria-hidden="true"></i> Home</button>
-    <button data-page="about"       onclick="navigate('about')"><i class="ti ti-info-circle" aria-hidden="true"></i> About</button>
-    <button data-page="marketplace" onclick="navigate('marketplace')"><i class="ti ti-building-store" aria-hidden="true"></i> Marketplace</button>
-    <button data-page="detect"      onclick="navigate('detect')"><i class="ti ti-cpu" aria-hidden="true"></i> AI Detect</button>
-    <button data-page="pickup"      onclick="navigate('pickup')"><i class="ti ti-truck" aria-hidden="true"></i> Pickup</button>
-    <button data-page="reports"     onclick="navigate('reports')"><i class="ti ti-map-pin" aria-hidden="true"></i> Reports</button>
-    <button data-page="risk"        onclick="navigate('risk')"><i class="ti ti-alert-triangle" aria-hidden="true"></i> Risk Map</button>
-    <button data-page="rewards"     onclick="navigate('rewards')"><i class="ti ti-trophy" aria-hidden="true"></i> Rewards</button>
-    <button data-page="analytics"   onclick="navigate('analytics')"><i class="ti ti-chart-bar" aria-hidden="true"></i> Analytics</button>
-    <button data-page="contact"     onclick="navigate('contact')"><i class="ti ti-mail" aria-hidden="true"></i> Contact</button>
-    <button data-page="adminLogin"  onclick="navigate('adminLogin')" style="color:var(--accent)"><i class="ti ti-shield-lock" aria-hidden="true"></i> Admin</button>
+    <button data-page="hero" onclick="navigate('hero')"><i class="ti ti-home"></i> Home</button>
+    <button data-page="about" onclick="navigate('about')"><i class="ti ti-info-circle"></i> About</button>
+    <button data-page="marketplace" onclick="navigate('marketplace')"><i class="ti ti-building-store"></i> Market</button>
+    <button data-page="detect" onclick="navigate('detect')"><i class="ti ti-cpu"></i> AI Detect</button>
+    <button data-page="reports" onclick="navigate('reports')"><i class="ti ti-map-pin"></i> Reports</button>
+    <button data-page="rewards" onclick="navigate('rewards')"><i class="ti ti-trophy"></i> Rewards</button>
+    <button data-page="wishlist" onclick="navigate('wishlist')"><i class="ti ti-heart"></i> Saved</button>
+    <button data-page="analytics" onclick="navigate('analytics')" id="analyticsNavBtn" style="display:none"><i class="ti ti-chart-bar"></i> Analytics</button>
+    <button data-page="contact" onclick="navigate('contact')"><i class="ti ti-mail"></i> Contact</button>
+    <button data-page="adminLogin" onclick="navigate('adminLogin')" style="color:var(--accent2)"><i class="ti ti-shield-lock"></i> Admin</button>
   </div>
   <div class="nav-actions">
     <span id="userBadge"></span>
-    <button class="btn btn-secondary btn-sm" id="loginNavBtn" onclick="navigate('auth')">
-      <i class="ti ti-login" aria-hidden="true"></i> Login
-    </button>
-    <button class="btn btn-danger btn-sm" id="logoutBtn" onclick="handleLogout()" style="display:none">
-      <i class="ti ti-logout" aria-hidden="true"></i> Logout
-    </button>
+    <div style="position:relative">
+      <button class="btn btn-secondary btn-sm" id="msgNavBtn" onclick="navigate('messages')" style="display:none">
+        <i class="ti ti-message"></i>
+        <span id="msgBubble" class="notify-bubble" style="display:none">0</span>
+      </button>
+    </div>
+    <button class="btn btn-secondary btn-sm" id="loginNavBtn" onclick="navigate('auth')"><i class="ti ti-login"></i> Login</button>
+    <button class="btn btn-danger btn-sm" id="logoutBtn" onclick="handleLogout()" style="display:none"><i class="ti ti-logout"></i> Logout</button>
   </div>
 </nav>
 
-<!-- ============================================================ HERO -->
+<!-- =============================== HERO -->
 <div id="heroPage" class="page active">
   <div class="hero">
     <div class="floating-icons">
-      <span class="fi"><i class="ti ti-recycle" aria-hidden="true"></i></span>
-      <span class="fi"><i class="ti ti-droplet" aria-hidden="true"></i></span>
-      <span class="fi"><i class="ti ti-leaf" aria-hidden="true"></i></span>
-      <span class="fi"><i class="ti ti-trash" aria-hidden="true"></i></span>
-      <span class="fi"><i class="ti ti-water" aria-hidden="true"></i></span>
-      <span class="fi"><i class="ti ti-world" aria-hidden="true"></i></span>
-      <span class="fi"><i class="ti ti-settings" aria-hidden="true"></i></span>
-      <span class="fi"><i class="ti ti-package" aria-hidden="true"></i></span>
+      <span class="fi"><i class="ti ti-recycle"></i></span>
+      <span class="fi"><i class="ti ti-droplet"></i></span>
+      <span class="fi"><i class="ti ti-leaf"></i></span>
+      <span class="fi"><i class="ti ti-trash"></i></span>
+      <span class="fi"><i class="ti ti-water"></i></span>
+      <span class="fi"><i class="ti ti-world"></i></span>
+      <span class="fi"><i class="ti ti-settings"></i></span>
+      <span class="fi"><i class="ti ti-package"></i></span>
     </div>
     <div style="position:relative;z-index:1">
-      <div class="hero-tag">
-        <i class="ti ti-world-check" aria-hidden="true"></i>
-        Smart City &nbsp;·&nbsp; AI-Powered &nbsp;·&nbsp; Eco-Friendly
-      </div>
+      <div class="hero-tag"><i class="ti ti-world-check"></i> Smart City &nbsp;·&nbsp; AI-Powered &nbsp;·&nbsp; Eco-Friendly</div>
       <h1>Smart Drainage<br>Waste Management</h1>
-      <p>Prevent drain blockages, promote recycling, and build cleaner communities with AI-powered waste classification and ML risk prediction.</p>
+      <p class="hero-sub">Prevent drain blockages, promote recycling, and build cleaner communities through AI-powered classification, smart pricing, and a vibrant waste marketplace.</p>
       <div class="hero-btns">
-        <button class="btn btn-primary" onclick="navigate('auth')">
-          <i class="ti ti-rocket" aria-hidden="true"></i> Get Started
-        </button>
-        <button class="btn btn-secondary" onclick="navigate('about')">
-          <i class="ti ti-arrow-right" aria-hidden="true"></i> Learn More
-        </button>
+        <button class="btn btn-primary" onclick="navigate('auth')"><i class="ti ti-rocket"></i> Get Started</button>
+        <button class="btn btn-secondary" onclick="navigate('marketplace')"><i class="ti ti-building-store"></i> Browse Market</button>
+      </div>
+    </div>
+  </div>
+  <div style="background:#fff;border-top:1px solid var(--border);padding:2.5rem 1.5rem">
+    <div style="max-width:1100px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem">
+      <div style="text-align:center;padding:1rem">
+        <div style="width:52px;height:52px;background:var(--primary-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto .8rem"><i class="ti ti-brain" style="font-size:24px;color:var(--primary)"></i></div>
+        <h4 style="font-family:'Syne',sans-serif;margin-bottom:.35rem">AI Waste Detection</h4>
+        <p style="font-size:.83rem;color:var(--text-m)">Upload a photo — AI identifies waste type and recycling methods instantly</p>
+      </div>
+      <div style="text-align:center;padding:1rem">
+        <div style="width:52px;height:52px;background:#fff3e0;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto .8rem"><i class="ti ti-coin" style="font-size:24px;color:#e65100"></i></div>
+        <h4 style="font-family:'Syne',sans-serif;margin-bottom:.35rem">Smart Price Check</h4>
+        <p style="font-size:.83rem;color:var(--text-m)">AI verifies if your listed price is fair compared to real market rates</p>
+      </div>
+      <div style="text-align:center;padding:1rem">
+        <div style="width:52px;height:52px;background:#e3f2fd;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto .8rem"><i class="ti ti-map-pin" style="font-size:24px;color:#1565c0"></i></div>
+        <h4 style="font-family:'Syne',sans-serif;margin-bottom:.35rem">Live GPS Location</h4>
+        <p style="font-size:.83rem;color:var(--text-m)">Pin your exact location on an interactive map when posting listings</p>
+      </div>
+      <div style="text-align:center;padding:1rem">
+        <div style="width:52px;height:52px;background:#f0e8ff;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto .8rem"><i class="ti ti-leaf" style="font-size:24px;color:#7c3aed"></i></div>
+        <h4 style="font-family:'Syne',sans-serif;margin-bottom:.35rem">Eco Impact Tracker</h4>
+        <p style="font-size:.83rem;color:var(--text-m)">See CO₂ saved, trees equivalent and energy conserved for every kg recycled</p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- ============================================================ ABOUT -->
+<!-- =============================== ABOUT -->
 <div id="aboutPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2>About the Project</h2>
-    <p>Solving urban drainage pollution through technology</p>
-  </div>
+  <div class="section-head"><h2>About the Project</h2><p>Solving urban drainage pollution through technology</p></div>
   <div class="grid-2">
     <div class="card">
       <div class="info-row" style="border:none;padding:0">
-        <div class="info-icon" style="background:#fcebeb">
-          <i class="ti ti-wave-sine" style="color:var(--danger)" aria-hidden="true"></i>
-        </div>
+        <div class="info-icon" style="background:#fcebeb"><i class="ti ti-wave-sine" style="color:var(--danger)"></i></div>
         <div>
           <h3 style="color:var(--danger);margin-bottom:.5rem">The Problem</h3>
-          <p style="color:var(--text-m);line-height:1.8;font-size:.9rem">Improper disposal of plastic, metal, paper, and other recyclables into public drainage systems causes flooding, water stagnation, mosquito breeding, and disease spread. Manual monitoring is slow and inefficient.</p>
+          <p style="color:var(--text-m);line-height:1.8;font-size:.9rem">Improper disposal of recyclables into public drainage causes flooding, water stagnation, mosquito breeding, and disease. Manual monitoring is slow and inefficient.</p>
         </div>
       </div>
     </div>
     <div class="card">
       <div class="info-row" style="border:none;padding:0">
-        <div class="info-icon">
-          <i class="ti ti-bulb" aria-hidden="true"></i>
-        </div>
+        <div class="info-icon"><i class="ti ti-bulb"></i></div>
         <div>
           <h3 style="color:var(--accent);margin-bottom:.5rem">Our Solution</h3>
-          <p style="color:var(--text-m);line-height:1.8;font-size:.9rem">A digital platform that enables citizens to sell, donate, and recycle waste instead of dumping it. AI classifies waste from photos, ML predicts high-risk areas, and the reward system incentivizes eco-friendly behavior.</p>
+          <p style="color:var(--text-m);line-height:1.8;font-size:.9rem">A digital platform where citizens sell, donate, and recycle waste instead of dumping it. AI classifies waste from photos, checks fair pricing, and rewards incentivise eco-friendly behaviour.</p>
         </div>
       </div>
     </div>
   </div>
-  <div class="grid-3" style="margin-top:1.5rem">
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
-        <i class="ti ti-code" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
-        <h4 style="color:var(--primary)">Frontend</h4>
-      </div>
-      <p style="color:var(--text-m);font-size:.85rem">HTML5 · CSS3 · JavaScript · Bootstrap 5</p>
-    </div>
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
-        <i class="ti ti-server" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
-        <h4 style="color:var(--primary)">Backend</h4>
-      </div>
-      <p style="color:var(--text-m);font-size:.85rem">Python · Flask · REST API</p>
-    </div>
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
-        <i class="ti ti-database" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
-        <h4 style="color:var(--primary)">Database</h4>
-      </div>
-      <p style="color:var(--text-m);font-size:.85rem">MongoDB · PyMongo</p>
-    </div>
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
-        <i class="ti ti-brain" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
-        <h4 style="color:var(--primary)">AI / ML</h4>
-      </div>
-      <p style="color:var(--text-m);font-size:.85rem">Scikit-Learn · Pandas · NumPy · OpenCV</p>
-    </div>
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
-        <i class="ti ti-chart-pie" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
-        <h4 style="color:var(--primary)">Charts</h4>
-      </div>
-      <p style="color:var(--text-m);font-size:.85rem">Chart.js · Interactive Dashboards</p>
-    </div>
-    <div class="card">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem">
-        <i class="ti ti-shield-check" style="color:var(--primary);font-size:20px" aria-hidden="true"></i>
-        <h4 style="color:var(--primary)">Security</h4>
-      </div>
-      <p style="color:var(--text-m);font-size:.85rem">Bcrypt · CORS · Input Validation</p>
-    </div>
+  <div class="grid-3" style="margin-top:1.4rem">
+    <div class="card"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem"><i class="ti ti-code" style="color:var(--primary)"></i><h4 style="color:var(--primary)">Frontend</h4></div><p style="color:var(--text-m);font-size:.83rem">HTML5 · CSS3 · JavaScript · Chart.js · Leaflet.js</p></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem"><i class="ti ti-server" style="color:var(--primary)"></i><h4 style="color:var(--primary)">Backend</h4></div><p style="color:var(--text-m);font-size:.83rem">Python · Flask · REST API</p></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem"><i class="ti ti-database" style="color:var(--primary)"></i><h4 style="color:var(--primary)">Database</h4></div><p style="color:var(--text-m);font-size:.83rem">MongoDB · PyMongo</p></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem"><i class="ti ti-brain" style="color:var(--primary)"></i><h4 style="color:var(--primary)">AI / ML</h4></div><p style="color:var(--text-m);font-size:.83rem">Waste Detection · Smart Price AI</p></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem"><i class="ti ti-map" style="color:var(--primary)"></i><h4 style="color:var(--primary)">Maps</h4></div><p style="color:var(--text-m);font-size:.83rem">Leaflet.js · OpenStreetMap · GPS API</p></div>
+    <div class="card"><div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem"><i class="ti ti-shield-check" style="color:var(--primary)"></i><h4 style="color:var(--primary)">Security</h4></div><p style="color:var(--text-m);font-size:.83rem">Bcrypt · CORS · Input Validation</p></div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ AUTH -->
+<!-- =============================== AUTH -->
 <div id="authPage" class="page">
 <div class="auth-wrap">
   <div class="card auth-card">
-    <div class="nav-brand" style="justify-content:center;margin-bottom:1.5rem;font-size:1.2rem">
-      <i class="ti ti-droplet-half-2" aria-hidden="true"></i>
-      Smart<span>Drain</span>
-    </div>
+    <div class="nav-brand" style="justify-content:center;margin-bottom:1.4rem"><i class="ti ti-droplet-half-2"></i>Smart<span>Drain</span></div>
     <div class="auth-tabs">
       <div class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')">Login</div>
       <div class="auth-tab" data-tab="register" onclick="switchAuthTab('register')">Register</div>
@@ -542,217 +538,278 @@
     <div id="loginForm">
       <div class="form-group"><label>Email</label><input id="loginEmail" type="email" placeholder="you@email.com"></div>
       <div class="form-group"><label>Password</label><input id="loginPass" type="password" placeholder="••••••••"></div>
-      <button id="loginBtn" class="btn btn-primary" style="width:100%" onclick="handleLogin()">
-        <i class="ti ti-lock-open" aria-hidden="true"></i> Login
-      </button>
+      <button id="loginBtn" class="btn btn-primary" style="width:100%" onclick="handleLogin()"><i class="ti ti-lock-open"></i> Login</button>
     </div>
     <div id="registerForm" style="display:none">
       <div class="form-group"><label>Full Name</label><input id="regName" type="text" placeholder="Your Name"></div>
       <div class="form-group"><label>Email</label><input id="regEmail" type="email" placeholder="you@email.com"></div>
+      <div class="form-group"><label>Phone (optional)</label><input id="regPhone" type="tel" placeholder="+91 9999999999"></div>
       <div class="form-group"><label>Password</label><input id="regPass" type="password" placeholder="••••••••"></div>
-      <button id="regBtn" class="btn btn-primary" style="width:100%" onclick="handleRegister()">
-        <i class="ti ti-user-plus" aria-hidden="true"></i> Create Account
-      </button>
+      <div class="form-group">
+        <label>Account Type</label>
+        <select id="regRole" onchange="toggleAdminSecret()">
+          <option value="user">Regular User</option>
+          <option value="admin">Administrator</option>
+        </select>
+      </div>
+      <div class="form-group" id="adminSecretGroup" style="display:none">
+        <label>Admin Secret Key</label>
+        <input id="adminSecret" type="password" placeholder="Enter admin secret key">
+        <div style="font-size:.73rem;color:var(--text-d);margin-top:.3rem"><i class="ti ti-info-circle"></i> Contact system administrator for the secret key</div>
+      </div>
+      <button id="regBtn" class="btn btn-primary" style="width:100%" onclick="handleRegister()"><i class="ti ti-user-plus"></i> Create Account</button>
     </div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ DASHBOARD -->
+<!-- =============================== DASHBOARD -->
 <div id="dashboardPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2>Welcome back, <span id="dashName" style="color:var(--accent)">User</span></h2>
-    <p>Here's your eco-activity summary</p>
-  </div>
+  <div class="section-head"><h2>Welcome back, <span id="dashName" style="color:var(--accent)">User</span></h2><p>Your eco-activity summary</p></div>
   <div class="grid-4">
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-leaf" aria-hidden="true"></i></div>
-      <div class="stat-num" id="dashPts">0</div>
-      <div class="stat-label">Reward Points</div>
-    </div>
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-recycle" aria-hidden="true"></i></div>
-      <div class="stat-num" id="dashListings">0</div>
-      <div class="stat-label">My Listings</div>
-    </div>
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-world" aria-hidden="true"></i></div>
-      <div class="stat-num" id="dashEco">0</div>
-      <div class="stat-label">Eco Score</div>
-    </div>
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-trophy" aria-hidden="true"></i></div>
-      <div class="stat-num">—</div>
-      <div class="stat-label">Your Rank</div>
-    </div>
+    <div class="card stat-card"><div class="stat-icon"><i class="ti ti-leaf"></i></div><div class="stat-num" id="dashPts">0</div><div class="stat-label">Reward Points</div></div>
+    <div class="card stat-card"><div class="stat-icon"><i class="ti ti-recycle"></i></div><div class="stat-num" id="dashListings">0</div><div class="stat-label">My Listings</div></div>
+    <div class="card stat-card"><div class="stat-icon"><i class="ti ti-world"></i></div><div class="stat-num" id="dashEco">0</div><div class="stat-label">Eco Score</div></div>
+    <div class="card stat-card"><div class="stat-icon"><i class="ti ti-cloud"></i></div><div class="stat-num" id="dashCO2">0</div><div class="stat-label">kg CO₂ Saved</div></div>
   </div>
-  <div class="grid-2" style="margin-top:1.5rem">
+  <div class="grid-2" style="margin-top:1.4rem">
     <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-bolt" aria-hidden="true"></i> Quick Actions
-      </h4>
-      <div style="display:flex;flex-direction:column;gap:.6rem">
-        <button class="btn btn-primary" onclick="navigate('sell')"><i class="ti ti-coin" aria-hidden="true"></i> Sell Waste</button>
-        <button class="btn btn-secondary" onclick="navigate('donate')"><i class="ti ti-gift" aria-hidden="true"></i> Donate Waste</button>
-        <button class="btn btn-secondary" onclick="navigate('detect')"><i class="ti ti-cpu" aria-hidden="true"></i> Detect Waste Type</button>
-        <button class="btn btn-secondary" onclick="navigate('pickup')"><i class="ti ti-truck" aria-hidden="true"></i> Request Pickup</button>
-        <button class="btn btn-secondary" onclick="navigate('reports')"><i class="ti ti-map-pin" aria-hidden="true"></i> Report Issue</button>
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-bolt"></i> Quick Actions</h4>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <button class="btn btn-primary" onclick="navigate('sell')"><i class="ti ti-coin"></i> Sell Waste</button>
+        <button class="btn btn-secondary" onclick="navigate('donate')"><i class="ti ti-gift"></i> Donate Waste</button>
+        <button class="btn btn-secondary" onclick="navigate('buy')"><i class="ti ti-shopping-cart"></i> Post a Buy Request</button>
+        <button class="btn btn-secondary" onclick="navigate('detect')"><i class="ti ti-cpu"></i> AI Detect Waste Type</button>
+        <button class="btn btn-secondary" onclick="navigate('reports')"><i class="ti ti-map-pin"></i> Report Drainage Issue</button>
+        <button class="btn btn-secondary" onclick="navigate('mylistings')"><i class="ti ti-list"></i> My Listings</button>
+        <button class="btn btn-secondary" onclick="navigate('myreports')"><i class="ti ti-file-report"></i> My Reports & Completions</button>
+        <button class="btn btn-secondary" onclick="navigate('wishlist')"><i class="ti ti-heart"></i> Saved Listings</button>
       </div>
     </div>
     <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-gift" aria-hidden="true"></i> How to Earn Points
-      </h4>
-      <div style="display:flex;flex-direction:column;gap:.6rem">
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:var(--glass);border-radius:8px">
-          <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-recycle" aria-hidden="true"></i> Sell waste listing</span>
-          <span style="color:var(--primary);font-weight:700">+10 pts</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:var(--glass);border-radius:8px">
-          <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-gift" aria-hidden="true"></i> Donate waste listing</span>
-          <span style="color:var(--primary);font-weight:700">+20 pts</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:var(--glass);border-radius:8px">
-          <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-map-pin" aria-hidden="true"></i> Submit community report</span>
-          <span style="color:var(--primary);font-weight:700">+5 pts</span>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:.6rem .8rem;background:var(--glass);border-radius:8px">
-          <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-users" aria-hidden="true"></i> Participate in drive</span>
-          <span style="color:var(--primary);font-weight:700">+50 pts</span>
-        </div>
+      <h4 style="color:var(--primary);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-gift"></i> How to Earn Points</h4>
+      <div style="display:flex;flex-direction:column;gap:.4rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem .75rem;background:var(--glass);border-radius:8px;font-size:.83rem"><span><i class="ti ti-recycle"></i> Sell waste listing</span><span style="color:var(--primary);font-weight:700">+10 pts</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem .75rem;background:var(--glass);border-radius:8px;font-size:.83rem"><span><i class="ti ti-gift"></i> Donate waste listing</span><span style="color:var(--primary);font-weight:700">+20 pts</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem .75rem;background:var(--glass);border-radius:8px;font-size:.83rem"><span><i class="ti ti-map-pin"></i> Submit community report</span><span style="color:var(--primary);font-weight:700">+5 pts</span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.55rem .75rem;background:var(--glass);border-radius:8px;font-size:.83rem"><span><i class="ti ti-users"></i> Participate in drive</span><span style="color:var(--primary);font-weight:700">+50 pts</span></div>
       </div>
     </div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ MARKETPLACE -->
+<!-- =============================== MARKETPLACE -->
 <div id="marketplacePage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2>Waste Marketplace</h2>
-    <p>Buy, sell, and donate recyclable waste materials</p>
+  <div class="section-head"><h2>Waste Marketplace</h2><p>Buy, sell, and donate recyclable waste</p></div>
+  <div class="search-bar">
+    <input id="mktSearch" type="text" placeholder="Search waste type, location…" onkeypress="if(event.key==='Enter')loadMarketplace()">
+    <select id="mktSort" onchange="loadMarketplace()">
+      <option value="newest">Newest First</option>
+      <option value="price_asc">Price: Low to High</option>
+      <option value="price_desc">Price: High to Low</option>
+      <option value="popular">Most Viewed</option>
+    </select>
+    <button class="btn btn-primary btn-sm" onclick="loadMarketplace()"><i class="ti ti-search"></i> Search</button>
+    <button class="btn btn-secondary btn-sm" onclick="navigate('sell')"><i class="ti ti-plus"></i> Sell</button>
+    <button class="btn btn-secondary btn-sm" onclick="navigate('donate')"><i class="ti ti-gift"></i> Donate</button>
+    <button class="btn btn-secondary btn-sm" onclick="navigate('buy')"><i class="ti ti-shopping-cart"></i> Buy Request</button>
   </div>
-  <div style="display:flex;gap:.5rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center">
-    <button class="tab-btn active" onclick="loadMarketplace('all');this.parentNode.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">
-      All
-    </button>
-    <button class="tab-btn" onclick="loadMarketplace('sell');this.parentNode.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">
-      <i class="ti ti-coin" aria-hidden="true"></i> For Sale
-    </button>
-    <button class="tab-btn" onclick="loadMarketplace('donate');this.parentNode.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));this.classList.add('active')">
-      <i class="ti ti-gift" aria-hidden="true"></i> Donations
-    </button>
-    <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="navigate('sell')">
-      <i class="ti ti-plus" aria-hidden="true"></i> Sell
-    </button>
-    <button class="btn btn-secondary btn-sm" onclick="navigate('donate')">
-      <i class="ti ti-plus" aria-hidden="true"></i> Donate
-    </button>
+  <div class="filter-chips">
+    <span class="chip active" onclick="setMktFilter('',this)">All</span>
+    <span class="chip" onclick="setMktFilter('sell',this)">🛒 For Sale</span>
+    <span class="chip" onclick="setMktFilter('donate',this)">🎁 Donations</span>
+    <span class="chip" onclick="setMktFilter('buy',this)">🔍 Buy Requests</span>
+    <span class="chip" onclick="setMktCat('plastic',this)">♻️ Plastic</span>
+    <span class="chip" onclick="setMktCat('paper',this)">📄 Paper</span>
+    <span class="chip" onclick="setMktCat('metal',this)">⚙️ Metal</span>
+    <span class="chip" onclick="setMktCat('glass',this)">🪟 Glass</span>
+    <span class="chip" onclick="setMktCat('e-waste',this)">💻 E-Waste</span>
+    <span class="chip" onclick="setMktCat('organic',this)">🌱 Organic</span>
   </div>
-  <div class="grid-3" id="listingsGrid"><p style="color:var(--text-m)">Loading listings...</p></div>
+  <div class="grid-3" id="listingsGrid"><p style="color:var(--text-m)">Loading listings…</p></div>
+  <div class="pagination" id="mktPagination"></div>
 </div>
 </div>
 
-<!-- ============================================================ SELL -->
+<!-- =============================== SELL -->
 <div id="sellPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-coin" style="color:var(--primary)" aria-hidden="true"></i> Sell Waste</h2>
-    <p>List recyclable waste for sale and earn +10 reward points</p>
-  </div>
-  <div class="card" style="max-width:560px">
-    <div class="form-group"><label>Waste Type</label>
-      <select id="sellWasteType">
-        <option value="plastic">Plastic</option><option value="paper">Paper</option>
-        <option value="metal">Metal</option><option value="glass">Glass</option>
-        <option value="e-waste">Electronic Waste</option><option value="other">Other</option>
-      </select>
+  <div class="section-head"><h2><i class="ti ti-coin" style="color:var(--primary)"></i> Sell Waste</h2><p>List recyclable waste for sale · earn +10 reward points · AI price &amp; type check</p></div>
+  <div class="grid-2">
+    <div class="card">
+      <div style="margin-bottom:1.2rem;padding:.9rem;background:var(--primary-light);border-radius:10px;border:1px solid rgba(15,123,92,.2)">
+        <div style="font-size:.78rem;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem"><i class="ti ti-brain"></i> AI Waste Auto-Detect</div>
+        <p style="font-size:.8rem;color:var(--text-m);margin-bottom:.6rem">Upload a photo → AI detects waste type and auto-fills the form</p>
+        <input type="file" id="sellImage" accept="image/*" onchange="detectAndFill('sell')" style="width:100%;padding:.4rem;border:1.5px dashed rgba(15,123,92,.3);border-radius:8px;cursor:pointer;font-size:.82rem">
+        <div id="sellDetectResult" class="inline-detect-result" style="display:none">
+          <span class="det-icon">♻️</span>
+          <div class="det-info"><strong id="sellDetectType">—</strong><span id="sellDetectConf">Confidence: —</span></div>
+          <span class="badge badge-green" id="sellDetectVal">—</span>
+        </div>
+      </div>
+      <div class="form-group"><label>Title</label><input id="sellTitle" type="text" placeholder="e.g. Clean Plastic Bottles 10kg"></div>
+      <div class="form-group"><label>Waste Type</label>
+        <select id="sellWasteType" onchange="triggerPriceCheck('sell')">
+          <option value="plastic">Plastic</option><option value="paper">Paper</option>
+          <option value="metal">Metal</option><option value="glass">Glass</option>
+          <option value="e-waste">Electronic Waste</option><option value="organic">Organic</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Quantity (kg)</label><input id="sellQty" type="number" placeholder="e.g. 5" oninput="triggerPriceCheck('sell')"></div>
+      <div class="form-group"><label>Price per kg (₹)</label><input id="sellPrice" type="number" placeholder="e.g. 10" oninput="triggerPriceCheck('sell')"></div>
+      <div id="sellPriceVerdict"></div>
+      <div class="form-group"><label>Condition</label>
+        <select id="sellCondition"><option value="clean">Clean / Sorted</option><option value="mixed">Mixed</option><option value="dirty">Needs Cleaning</option></select>
+      </div>
+      <div class="form-group"><label>Pickup Location</label><input id="sellLoc" type="text" placeholder="Click the map or use live location"></div>
+      <div class="form-group"><label>Description</label><textarea id="sellDesc" placeholder="More details about condition, availability…"></textarea></div>
+      <button id="sellBtn" class="btn btn-primary" onclick="handleAddListing('sell')"><i class="ti ti-clipboard-list"></i> Post Listing (+10 pts)</button>
     </div>
-    <div class="form-group"><label>Quantity (kg)</label><input id="sellQty" type="number" placeholder="e.g. 5"></div>
-    <div class="form-group"><label>Price per kg (₹)</label><input id="sellPrice" type="number" placeholder="e.g. 10"></div>
-    <div class="form-group"><label>Pickup Location</label><input id="sellLoc" type="text" placeholder="Area, City"></div>
-    <div class="form-group"><label>Description</label><textarea id="sellDesc" placeholder="Condition, more details..."></textarea></div>
-    <div class="form-group"><label>Upload Image</label><input id="sellImage" type="file" accept="image/*" style="padding:.4rem"></div>
-    <button id="sellBtn" class="btn btn-primary" onclick="handleAddListing('sell')">
-      <i class="ti ti-clipboard-list" aria-hidden="true"></i> Post Listing (+10 pts)
-    </button>
+    <div>
+      <h4 style="color:var(--primary);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-map-pin"></i> Pin Pickup Location</h4>
+      <div class="location-status" id="sellLocationStatus"><i class="ti ti-map-pin"></i><span id="sellLocationStatusText">Use live location or click the map</span></div>
+      <button class="btn btn-location pulse" id="sellLiveBtn" onclick="getLiveLocation('sell')" style="width:100%;margin-bottom:.6rem"><i class="ti ti-current-location"></i> Get Live Location</button>
+      <div style="display:flex;gap:.4rem;margin-bottom:.6rem">
+        <input id="sellSearchInput" type="text" placeholder="Search address…" style="flex:1;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none">
+        <button id="sellSearchBtn" class="btn btn-secondary btn-sm"><i class="ti ti-search"></i></button>
+      </div>
+      <div class="map-container" id="sellMapContainer"></div>
+      <p class="map-info-text"><i class="ti ti-info-circle"></i> Click the map, search, or use live location to set pickup point</p>
+      <div id="sellCoordDisplay" style="display:none;margin-top:.5rem" class="coordinates-display"></div>
+    </div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ DONATE -->
+<!-- =============================== DONATE -->
 <div id="donatePage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-gift" style="color:var(--primary)" aria-hidden="true"></i> Donate Waste</h2>
-    <p>Donate recyclable materials and earn +20 reward points</p>
-  </div>
-  <div class="card" style="max-width:560px">
-    <div class="form-group"><label>Waste Type</label>
-      <select id="donateWasteType">
-        <option value="plastic">Plastic</option><option value="paper">Paper</option>
-        <option value="metal">Metal</option><option value="glass">Glass</option>
-        <option value="e-waste">Electronic Waste</option><option value="other">Other</option>
-      </select>
+  <div class="section-head"><h2><i class="ti ti-gift" style="color:var(--primary)"></i> Donate Waste</h2><p>Donate recyclable materials and earn +20 reward points</p></div>
+  <div class="grid-2">
+    <div class="card">
+      <div style="margin-bottom:1.2rem;padding:.9rem;background:var(--primary-light);border-radius:10px;border:1px solid rgba(15,123,92,.2)">
+        <div style="font-size:.78rem;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:.5rem"><i class="ti ti-brain"></i> AI Waste Auto-Detect</div>
+        <input type="file" id="donateImage" accept="image/*" onchange="detectAndFill('donate')" style="width:100%;padding:.4rem;border:1.5px dashed rgba(15,123,92,.3);border-radius:8px;cursor:pointer;font-size:.82rem">
+        <div id="donateDetectResult" class="inline-detect-result" style="display:none">
+          <span class="det-icon">♻️</span>
+          <div class="det-info"><strong id="donateDetectType">—</strong><span id="donateDetectConf">—</span></div>
+        </div>
+      </div>
+      <div class="form-group"><label>Title</label><input id="donateTitle" type="text" placeholder="e.g. Old Newspapers Bundle"></div>
+      <div class="form-group"><label>Waste Type</label>
+        <select id="donateWasteType">
+          <option value="plastic">Plastic</option><option value="paper">Paper</option>
+          <option value="metal">Metal</option><option value="glass">Glass</option>
+          <option value="e-waste">Electronic Waste</option><option value="organic">Organic</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Quantity (kg)</label><input id="donateQty" type="number" placeholder="e.g. 5"></div>
+      <div class="form-group"><label>Pickup Location</label><input id="donateLoc" type="text" placeholder="Click the map or use live location"></div>
+      <div class="form-group"><label>Description</label><textarea id="donateDesc" placeholder="Condition, availability…"></textarea></div>
+      <button id="donateBtn" class="btn btn-primary" onclick="handleAddListing('donate')"><i class="ti ti-gift"></i> Donate Now (+20 pts)</button>
     </div>
-    <div class="form-group"><label>Quantity (kg)</label><input id="donateQty" type="number" placeholder="e.g. 5"></div>
-    <div class="form-group"><label>Pickup Location</label><input id="donateLoc" type="text" placeholder="Area, City"></div>
-    <div class="form-group"><label>Description</label><textarea id="donateDesc" placeholder="Condition, availability..."></textarea></div>
-    <div class="form-group"><label>Upload Image</label><input id="donateImage" type="file" accept="image/*" style="padding:.4rem"></div>
-    <button id="donateBtn" class="btn btn-primary" onclick="handleAddListing('donate')">
-      <i class="ti ti-gift" aria-hidden="true"></i> Donate Now (+20 pts)
-    </button>
+    <!-- Map for donate -->
+    <div>
+      <h4 style="color:var(--primary);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-map-pin"></i> Pin Pickup Location</h4>
+      <div class="location-status" id="donateLocationStatus"><i class="ti ti-map-pin"></i><span id="donateLocationStatusText">Use live location or click the map</span></div>
+      <button class="btn btn-location pulse" id="donateLiveBtn" onclick="getLiveLocation('donate')" style="width:100%;margin-bottom:.6rem"><i class="ti ti-current-location"></i> Get Live Location</button>
+      <div style="display:flex;gap:.4rem;margin-bottom:.6rem">
+        <input id="donateSearchInput" type="text" placeholder="Search address…" style="flex:1;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none">
+        <button id="donateSearchBtn" class="btn btn-secondary btn-sm"><i class="ti ti-search"></i></button>
+      </div>
+      <div class="map-container" id="donateMapContainer"></div>
+      <p class="map-info-text"><i class="ti ti-info-circle"></i> Click the map, search, or use live location to set pickup point</p>
+      <div id="donateCoordDisplay" style="display:none;margin-top:.5rem" class="coordinates-display"></div>
+    </div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ DETECT (AI) -->
+<!-- =============================== BUY REQUEST -->
+<div id="buyPage" class="page">
+<div class="container">
+  <div class="section-head"><h2><i class="ti ti-shopping-cart" style="color:var(--primary)"></i> Post Buy Request</h2><p>Looking to buy recycled waste? Let sellers know what you need</p></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="form-group"><label>What do you need?</label><input id="buyTitle" type="text" placeholder="e.g. Looking for 50kg scrap metal"></div>
+      <div class="form-group"><label>Waste Type</label>
+        <select id="buyWasteType" onchange="triggerPriceCheck('buy')">
+          <option value="plastic">Plastic</option><option value="paper">Paper</option>
+          <option value="metal">Metal</option><option value="glass">Glass</option>
+          <option value="e-waste">Electronic Waste</option><option value="organic">Organic</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Quantity Needed (kg)</label><input id="buyQty" type="number" placeholder="e.g. 50" oninput="triggerPriceCheck('buy')"></div>
+      <div class="form-group"><label>Max Price per kg (₹)</label><input id="buyPrice" type="number" placeholder="e.g. 12" oninput="triggerPriceCheck('buy')"></div>
+      <div id="buyPriceVerdict"></div>
+      <div class="form-group"><label>Your Location</label><input id="buyLoc" type="text" placeholder="Click the map or use live location"></div>
+      <div class="form-group"><label>Additional Requirements</label><textarea id="buyDesc" placeholder="Quality, condition, urgency…"></textarea></div>
+      <button id="buyBtn" class="btn btn-primary" onclick="handleAddListing('buy')"><i class="ti ti-search"></i> Post Buy Request</button>
+    </div>
+    <div>
+      <h4 style="color:var(--primary);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-map-pin"></i> Your Location</h4>
+      <div class="location-status" id="buyLocationStatus"><i class="ti ti-map-pin"></i><span id="buyLocationStatusText">Use live location or click the map</span></div>
+      <button class="btn btn-location pulse" id="buyLiveBtn" onclick="getLiveLocation('buy')" style="width:100%;margin-bottom:.6rem"><i class="ti ti-current-location"></i> Get Live Location</button>
+      <div style="display:flex;gap:.4rem;margin-bottom:.6rem">
+        <input id="buySearchInput" type="text" placeholder="Search address…" style="flex:1;padding:.5rem .75rem;border:1.5px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none">
+        <button id="buySearchBtn" class="btn btn-secondary btn-sm"><i class="ti ti-search"></i></button>
+      </div>
+      <div class="map-container" id="buyMapContainer"></div>
+      <p class="map-info-text"><i class="ti ti-info-circle"></i> Click the map, search, or use live location</p>
+      <div id="buyCoordDisplay" style="display:none;margin-top:.5rem" class="coordinates-display"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- =============================== MY LISTINGS -->
+<div id="mylistingsPage" class="page">
+<div class="container">
+  <div class="section-head"><h2>My Listings</h2><p>Manage your waste listings, see interested buyers</p></div>
+  <div id="myListingsGrid"><p style="color:var(--text-m)">Loading…</p></div>
+</div>
+</div>
+
+<!-- =============================== WISHLIST -->
+<div id="wishlistPage" class="page">
+<div class="container">
+  <div class="section-head"><h2><i class="ti ti-heart" style="color:var(--danger)"></i> Saved Listings</h2><p>Listings you've bookmarked to buy or watch</p></div>
+  <div class="grid-3" id="wishlistGrid"><p style="color:var(--text-m)">Loading…</p></div>
+</div>
+</div>
+
+<!-- =============================== MESSAGES -->
+<div id="messagesPage" class="page">
+<div class="container">
+  <div class="section-head"><h2>Messages</h2><p>Chat with buyers and sellers</p></div>
+  <div id="messageThreads"><p style="color:var(--text-m)">Loading…</p></div>
+</div>
+</div>
+
+<!-- =============================== AI DETECT -->
 <div id="detectPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-cpu" style="color:var(--primary)" aria-hidden="true"></i> AI Waste Detection</h2>
-    <p>Upload an image — our AI will classify the waste type and suggest recycling methods</p>
-  </div>
+  <div class="section-head"><h2><i class="ti ti-cpu" style="color:var(--primary)"></i> AI Waste Detection</h2><p>Upload an image — AI classifies waste type and suggests recycling methods</p></div>
   <div class="grid-2">
     <div>
       <div id="dropZone">
-        <div class="dz-icon"><i class="ti ti-cloud-upload" aria-hidden="true"></i></div>
-        <p style="color:var(--text-m);margin:.5rem 0">Drop your waste image here, or click to upload</p>
+        <div class="dz-icon"><i class="ti ti-cloud-upload"></i></div>
+        <p style="color:var(--text-m);margin:.4rem 0">Drop your waste image here, or click to upload</p>
         <span class="badge badge-green">JPG · PNG · WEBP</span>
         <input id="fileInput" type="file" accept="image/*" style="display:none">
       </div>
-      <img id="imgPreview" style="display:none;width:100%;border-radius:12px;margin-top:1rem;max-height:280px;object-fit:cover" alt="preview">
+      <img id="imgPreview" style="display:none;width:100%;border-radius:12px;margin-top:1rem;max-height:260px;object-fit:cover" alt="preview">
     </div>
     <div>
       <div class="card" style="height:100%">
         <h4 style="color:var(--text-m);margin-bottom:1rem">How it works</h4>
-        <div class="info-row">
-          <div class="info-icon"><i class="ti ti-camera" aria-hidden="true"></i></div>
-          <div>
-            <strong>Upload Photo</strong>
-            <p style="font-size:.82rem;color:var(--text-m)">Take or upload a clear photo of the waste item</p>
-          </div>
-        </div>
-        <div class="info-row">
-          <div class="info-icon"><i class="ti ti-brain" aria-hidden="true"></i></div>
-          <div>
-            <strong>AI Analysis</strong>
-            <p style="font-size:.82rem;color:var(--text-m)">Our model identifies waste type with confidence score</p>
-          </div>
-        </div>
-        <div class="info-row">
-          <div class="info-icon"><i class="ti ti-recycle" aria-hidden="true"></i></div>
-          <div>
-            <strong>Get Guidance</strong>
-            <p style="font-size:.82rem;color:var(--text-m)">Receive recycling methods and estimated resale value</p>
-          </div>
-        </div>
-        <div style="margin-top:1.2rem;padding:1rem;background:var(--glass);border-radius:10px;font-size:.78rem;color:var(--text-m)">
-          <i class="ti ti-flask" aria-hidden="true"></i>
-          <strong>Model:</strong> CNN-based classifier trained on waste dataset (6 categories).
-        </div>
+        <div class="info-row"><div class="info-icon"><i class="ti ti-camera"></i></div><div><strong>Upload Photo</strong><p style="font-size:.8rem;color:var(--text-m)">Take or upload a clear photo of the waste item</p></div></div>
+        <div class="info-row"><div class="info-icon"><i class="ti ti-brain"></i></div><div><strong>AI Analysis</strong><p style="font-size:.8rem;color:var(--text-m)">Model identifies waste type with confidence score</p></div></div>
+        <div class="info-row"><div class="info-icon"><i class="ti ti-recycle"></i></div><div><strong>Get Guidance</strong><p style="font-size:.8rem;color:var(--text-m)">Receive recycling methods and estimated value</p></div></div>
+        <div style="margin-top:1rem;padding:.85rem;background:var(--glass);border-radius:10px;font-size:.77rem;color:var(--text-m)"><i class="ti ti-flask"></i> <strong>Model:</strong> CNN-based classifier trained on 6 waste categories.</div>
       </div>
     </div>
   </div>
@@ -760,401 +817,222 @@
 </div>
 </div>
 
-<!-- ============================================================ PICKUP -->
-<div id="pickupPage" class="page">
-<div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-truck" style="color:var(--primary)" aria-hidden="true"></i> Request Pickup</h2>
-    <p>Schedule doorstep waste collection with live GPS location tracking</p>
-  </div>
-  <div class="grid-2">
-    <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-calendar-plus" aria-hidden="true"></i> New Pickup Request
-      </h4>
-      
-      <!-- Live Location Button -->
-      <div class="location-status" id="pickupLocationStatus">
-        <i class="ti ti-map-pin" aria-hidden="true"></i>
-        <span id="pickupLocationStatusText">Click "Get Live Location" to detect your position</span>
-      </div>
-      
-      <button id="pickupLiveLocationBtn" class="btn btn-location pulse" onclick="getLiveLocation('pickup')" style="width:100%;margin-bottom:1rem;">
-        <i class="ti ti-current-location" aria-hidden="true"></i> Get Live Location
-      </button>
-      
-      <div class="form-group" id="pickupCoordinatesGroup" style="display:none;">
-        <label>GPS Coordinates</label>
-        <div class="coordinates-display" id="pickupCoordinatesDisplay">--</div>
-      </div>
-      
-      <div class="form-group"><label>Waste Type</label>
-        <select id="pickupWaste">
-          <option value="plastic">Plastic</option><option value="paper">Paper</option>
-          <option value="metal">Metal</option><option value="mixed">Mixed</option><option value="e-waste">E-Waste</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Search Location</label>
-        <div style="display:flex;gap:.5rem">
-          <input id="pickupSearchInput" type="text" placeholder="Search address or place..." style="flex:1">
-          <button id="pickupSearchBtn" class="btn btn-secondary btn-sm" type="button">
-            <i class="ti ti-search" aria-hidden="true"></i> Search
-          </button>
-        </div>
-      </div>
-      <div class="form-group"><label>Pickup Address</label><input id="pickupLoc" type="text" placeholder="Click on map or use live location"></div>
-      <div class="form-group"><label>Preferred Date</label><input id="pickupDate" type="date"></div>
-      <button id="pickupBtn" class="btn btn-primary" onclick="handlePickupRequest()">
-        <i class="ti ti-calendar-event" aria-hidden="true"></i> Request Pickup
-      </button>
-    </div>
-    <div>
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-map-pin" aria-hidden="true"></i> Live Location Map
-      </h4>
-      <div id="pickupMapContainer" class="map-container"></div>
-      <p class="map-info-text">
-        <i class="ti ti-info-circle" aria-hidden="true"></i> Click on map, search address, or use "Get Live Location" button
-      </p>
-    </div>
-  </div>
-  <div class="card" style="margin-top:1.5rem">
-    <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-      <i class="ti ti-history" aria-hidden="true"></i> My Pickup History
-    </h4>
-    <div style="overflow-x:auto">
-      <table class="data-table">
-        <thead><tr><th>Type</th><th>Location</th><th>Date</th><th>Status</th><th>Map</th></tr></thead>
-        <tbody id="myPickupsTable"><tr><td colspan="5" style="color:var(--text-m)">No requests yet.</td></tr></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-</div>
-
-<!-- ============================================================ REPORTS -->
+<!-- =============================== REPORTS -->
 <div id="reportsPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-map-pin" style="color:var(--primary)" aria-hidden="true"></i> Community Reports</h2>
-    <p>Report blocked drains and waste issues with live GPS location tracking</p>
-  </div>
+  <div class="section-head"><h2><i class="ti ti-map-pin" style="color:var(--primary)"></i> Community Reports</h2><p>Report drainage and waste issues with live GPS tracking</p></div>
   <div class="grid-2">
     <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-send" aria-hidden="true"></i> Submit a Report (+5 pts)
-      </h4>
-      
-      <!-- Live Location Button -->
-      <div class="location-status" id="reportLocationStatus">
-        <i class="ti ti-map-pin" aria-hidden="true"></i>
-        <span id="reportLocationStatusText">Click "Get Live Location" to detect your position</span>
-      </div>
-      
-      <button id="reportLiveLocationBtn" class="btn btn-location pulse" onclick="getLiveLocation('report')" style="width:100%;margin-bottom:1rem;">
-        <i class="ti ti-current-location" aria-hidden="true"></i> Get Live Location
-      </button>
-      
-      <div class="form-group" id="reportCoordinatesGroup" style="display:none;">
-        <label>GPS Coordinates</label>
-        <div class="coordinates-display" id="reportCoordinatesDisplay">--</div>
-      </div>
-      
-      <div class="form-group"><label>Issue Description</label><textarea id="reportDesc" placeholder="Describe the drainage/waste issue..."></textarea></div>
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-send"></i> Submit Report (+5 pts)</h4>
+      <div class="location-status" id="reportLocationStatus"><i class="ti ti-map-pin"></i><span id="reportLocationStatusText">Click "Get Live Location" to detect position</span></div>
+      <button id="reportLiveLocationBtn" class="btn btn-location pulse" onclick="getLiveLocation('report')" style="width:100%;margin-bottom:1rem"><i class="ti ti-current-location"></i> Get Live Location</button>
+      <div class="form-group" id="reportCoordinatesGroup" style="display:none"><label>GPS Coordinates</label><div class="coordinates-display" id="reportCoordinatesDisplay">--</div></div>
+      <div class="form-group"><label>Issue Description</label><textarea id="reportDesc" placeholder="Describe the drainage/waste issue…"></textarea></div>
+      <!-- Image upload for report -->
       <div class="form-group">
-        <label>Search Location</label>
-        <div style="display:flex;gap:.5rem">
-          <input id="reportSearchInput" type="text" placeholder="Search address or place..." style="flex:1">
-          <button id="reportSearchBtn" class="btn btn-secondary btn-sm" type="button">
-            <i class="ti ti-search" aria-hidden="true"></i> Search
-          </button>
+        <label>Upload Issue Photo <span style="color:var(--text-d);font-weight:400;text-transform:none">(optional · visible to admin)</span></label>
+        <input type="file" id="reportImage" accept="image/*" onchange="previewReportImage()" style="width:100%;padding:.4rem;border:1.5px dashed rgba(15,123,92,.3);border-radius:8px;cursor:pointer;font-size:.82rem">
+        <img id="reportImagePreview" class="report-img-preview" style="display:none" alt="Report issue photo">
+      </div>
+      <div class="form-group"><label>Search Location</label>
+        <div style="display:flex;gap:.4rem">
+          <input id="reportSearchInput" type="text" placeholder="Search address…" style="flex:1">
+          <button id="reportSearchBtn" class="btn btn-secondary btn-sm"><i class="ti ti-search"></i></button>
         </div>
       </div>
-      <div class="form-group"><label>Location Address</label><input id="reportLoc" type="text" placeholder="Click on map or use live location"></div>
-      <button class="btn btn-primary" onclick="handleReport()">
-        <i class="ti ti-alert-circle" aria-hidden="true"></i> Submit Report
-      </button>
+      <div class="form-group"><label>Location Address</label><input id="reportLoc" type="text" placeholder="Click map or use live location"></div>
+      <button class="btn btn-primary" onclick="handleReport()"><i class="ti ti-alert-circle"></i> Submit Report</button>
     </div>
     <div>
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-map" aria-hidden="true"></i> Select Issue Location
-      </h4>
+      <h4 style="color:var(--primary);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-map"></i> Select Issue Location</h4>
       <div id="reportMapContainer" class="map-container"></div>
-      <p class="map-info-text">
-        <i class="ti ti-info-circle" aria-hidden="true"></i> Click on map, search, or use "Get Live Location" button
-      </p>
+      <p class="map-info-text"><i class="ti ti-info-circle"></i> Click map, search, or use "Get Live Location"</p>
     </div>
   </div>
-  <div style="margin-top:1.5rem">
-    <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-      <i class="ti ti-list" aria-hidden="true"></i> Recent Reports
-    </h4>
-    <div id="reportsList"><p style="color:var(--text-m)">Loading...</p></div>
+  <div style="margin-top:1.4rem">
+    <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-list"></i> Recent Community Reports</h4>
+    <div id="reportsList"><p style="color:var(--text-m)">Loading…</p></div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ RISK PREDICTION -->
-<div id="riskPage" class="page">
+<!-- =============================== MY REPORTS -->
+<div id="myreportsPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-alert-triangle" style="color:var(--danger)" aria-hidden="true"></i> AI Risk Prediction</h2>
-    <p>ML-powered drainage blockage risk scores for your city</p>
-  </div>
-  <div class="grid-2">
-    <div>
-      <div style="display:flex;gap:.8rem;margin-bottom:1.2rem;flex-wrap:wrap">
-        <span class="badge badge-red"><i class="ti ti-circle-filled" aria-hidden="true"></i> HIGH &gt;70</span>
-        <span class="badge badge-warn"><i class="ti ti-circle-filled" aria-hidden="true"></i> MEDIUM 40–70</span>
-        <span class="badge badge-green"><i class="ti ti-circle-filled" aria-hidden="true"></i> LOW &lt;40</span>
-      </div>
-      <div id="riskList"><p style="color:var(--text-m)">Loading predictions...</p></div>
-    </div>
-    <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-question-mark" aria-hidden="true"></i> How Risk is Predicted
-      </h4>
-      <p style="color:var(--text-m);font-size:.88rem;line-height:1.8">The ML model uses the following inputs to calculate risk scores:</p>
-      <div style="margin:.8rem 0;display:flex;flex-direction:column;gap:.5rem">
-        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-map-pin" aria-hidden="true"></i> Community reports by area</div>
-        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-package" aria-hidden="true"></i> Waste listing density per zone</div>
-        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-history" aria-hidden="true"></i> Historical blockage records</div>
-        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-cloud-rain" aria-hidden="true"></i> Seasonal rainfall patterns</div>
-        <div style="display:flex;align-items:center;gap:.6rem;font-size:.85rem;color:var(--text-m)"><i class="ti ti-users" aria-hidden="true"></i> Population density</div>
-      </div>
-      <button class="btn btn-secondary" style="margin-top:1rem;width:100%" onclick="loadRisk()">
-        <i class="ti ti-refresh" aria-hidden="true"></i> Refresh Predictions
-      </button>
-    </div>
-  </div>
+  <div class="section-head"><h2>My Reports &amp; Completions</h2><p>Track your reports, see completion images, and rate the work done</p></div>
+  <div id="myReportsList"><p style="color:var(--text-m)">Loading…</p></div>
 </div>
 </div>
 
-<!-- ============================================================ REWARDS -->
+<!-- =============================== REWARDS -->
 <div id="rewardsPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-trophy" style="color:var(--accent2)" aria-hidden="true"></i> Rewards &amp; Leaderboard</h2>
-    <p>Your eco-contributions count!</p>
-  </div>
+  <div class="section-head"><h2><i class="ti ti-trophy" style="color:var(--accent2)"></i> Rewards &amp; Leaderboard</h2><p>Your eco-contributions count!</p></div>
   <div class="grid-2">
     <div>
-      <div class="points-display" style="margin-bottom:1.2rem">
-        <div style="font-size:.78rem;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.7);margin-bottom:.5rem">Your Reward Points</div>
+      <div class="points-display" style="margin-bottom:1.1rem">
+        <div style="font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.75);margin-bottom:.4rem">Your Reward Points</div>
         <div class="points-num" id="rewardPts">0</div>
-        <div style="font-size:.82rem;color:rgba(255,255,255,.8);margin-top:.4rem">Eco Score: <span id="rewardEco" style="color:#fff;font-weight:700">0</span></div>
+        <div style="font-size:.8rem;color:rgba(255,255,255,.8);margin-top:.35rem">Eco Score: <span id="rewardEco" style="color:#fff;font-weight:700">0</span> · CO₂ Saved: <span id="rewardCO2" style="color:#fff;font-weight:700">0</span>kg</div>
+      </div>
+      <div class="card" style="margin-bottom:1rem">
+        <h4 style="color:var(--primary);margin-bottom:.8rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-leaf"></i> My Eco Stats</h4>
+        <div class="eco-impact-grid">
+          <div class="eco-impact-item"><div class="val" id="rWasteSold">0</div><div class="lbl">kg Waste Sold</div></div>
+          <div class="eco-impact-item"><div class="val" id="rWasteDonated">0</div><div class="lbl">kg Donated</div></div>
+          <div class="eco-impact-item"><div class="val" id="rCO2">0</div><div class="lbl">kg CO₂ Saved</div></div>
+          <div class="eco-impact-item"><div class="val" id="rTrees">0</div><div class="lbl">Trees Equivalent</div></div>
+        </div>
       </div>
       <div class="card">
-        <h4 style="color:var(--primary);margin-bottom:.8rem;display:flex;align-items:center;gap:.5rem">
-          <i class="ti ti-star" aria-hidden="true"></i> Points Activity
-        </h4>
-        <div style="display:flex;flex-direction:column;gap:.4rem">
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.5rem .7rem;background:var(--glass);border-radius:8px">
-            <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-recycle" aria-hidden="true"></i> Sell listing</span>
-            <span style="color:var(--primary);font-weight:600">+10</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.5rem .7rem;background:var(--glass);border-radius:8px">
-            <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-gift" aria-hidden="true"></i> Donate listing</span>
-            <span style="color:var(--primary);font-weight:600">+20</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.5rem .7rem;background:var(--glass);border-radius:8px">
-            <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-map-pin" aria-hidden="true"></i> Submit report</span>
-            <span style="color:var(--primary);font-weight:600">+5</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;align-items:center;font-size:.82rem;padding:.5rem .7rem;background:var(--glass);border-radius:8px">
-            <span style="display:flex;align-items:center;gap:.5rem"><i class="ti ti-car" aria-hidden="true"></i> Join cleanup drive</span>
-            <span style="color:var(--primary);font-weight:600">+50</span>
-          </div>
+        <h4 style="color:var(--primary);margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-star"></i> Points Activity</h4>
+        <div style="display:flex;flex-direction:column;gap:.35rem">
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.45rem .7rem;background:var(--glass);border-radius:8px"><span><i class="ti ti-recycle"></i> Sell listing</span><span style="color:var(--primary);font-weight:700">+10</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.45rem .7rem;background:var(--glass);border-radius:8px"><span><i class="ti ti-gift"></i> Donate listing</span><span style="color:var(--primary);font-weight:700">+20</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.45rem .7rem;background:var(--glass);border-radius:8px"><span><i class="ti ti-map-pin"></i> Submit report</span><span style="color:var(--primary);font-weight:700">+5</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:.82rem;padding:.45rem .7rem;background:var(--glass);border-radius:8px"><span><i class="ti ti-car"></i> Join cleanup drive</span><span style="color:var(--primary);font-weight:700">+50</span></div>
         </div>
       </div>
     </div>
     <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-medal" aria-hidden="true"></i> Top Eco Champions
-      </h4>
-      <div id="leaderboard"><p style="color:var(--text-m)">Loading...</p></div>
+      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-medal"></i> Top Eco Champions</h4>
+      <div id="leaderboard"><p style="color:var(--text-m)">Loading…</p></div>
     </div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ ANALYTICS -->
+<!-- =============================== ANALYTICS -->
 <div id="analyticsPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-chart-bar" style="color:var(--primary)" aria-hidden="true"></i> Analytics Dashboard</h2>
-    <p>Real-time recycling and waste management statistics</p>
-  </div>
-  <div class="grid-3" style="margin-bottom:1.5rem">
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-users" aria-hidden="true"></i></div>
-      <div class="stat-num" id="aUsers">—</div>
-      <div class="stat-label">Total Users</div>
-    </div>
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-clipboard-list" aria-hidden="true"></i></div>
-      <div class="stat-num" id="aListings">—</div>
-      <div class="stat-label">Total Listings</div>
-    </div>
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-gift" aria-hidden="true"></i></div>
-      <div class="stat-num" id="aDonations">—</div>
-      <div class="stat-label">Donations</div>
-    </div>
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-coin" aria-hidden="true"></i></div>
-      <div class="stat-num" id="aSales">—</div>
-      <div class="stat-label">Sales</div>
-    </div>
-    <div class="card stat-card">
-      <div class="stat-icon"><i class="ti ti-truck" aria-hidden="true"></i></div>
-      <div class="stat-num" id="aPickups">—</div>
-      <div class="stat-label">Pickups</div>
-    </div>
-    <div class="card stat-card">
-      <div class="stat-icon" style="background:#fcebeb"><i class="ti ti-alert-circle" style="color:var(--danger)" aria-hidden="true"></i></div>
-      <div class="stat-num" id="aReports">—</div>
-      <div class="stat-label">Reports</div>
+  <div id="analyticsAdminGate">
+    <div class="admin-only-notice">
+      <i class="ti ti-lock"></i>
+      <h3>Admin Access Required</h3>
+      <p>Analytics are only visible to administrators.</p>
+      <button class="btn btn-primary" style="margin-top:1rem" onclick="navigate('adminLogin')"><i class="ti ti-shield-lock"></i> Admin Login</button>
     </div>
   </div>
-  <div class="grid-2">
-    <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-chart-line" aria-hidden="true"></i> Monthly Recycling Trend
-      </h4>
-      <canvas id="trendChart" height="180"></canvas>
+  <div id="analyticsContent" style="display:none">
+    <div class="section-head"><h2><i class="ti ti-chart-bar" style="color:var(--primary)"></i> Analytics Dashboard</h2><p>Real-time waste management statistics — Admin only</p></div>
+    <div class="grid-3" style="margin-bottom:1.4rem">
+      <div class="card stat-card"><div class="stat-icon"><i class="ti ti-users"></i></div><div class="stat-num" id="aUsers">—</div><div class="stat-label">Total Users</div></div>
+      <div class="card stat-card"><div class="stat-icon"><i class="ti ti-clipboard-list"></i></div><div class="stat-num" id="aListings">—</div><div class="stat-label">Total Listings</div></div>
+      <div class="card stat-card"><div class="stat-icon"><i class="ti ti-gift"></i></div><div class="stat-num" id="aDonations">—</div><div class="stat-label">Donations</div></div>
+      <div class="card stat-card"><div class="stat-icon"><i class="ti ti-coin"></i></div><div class="stat-num" id="aSales">—</div><div class="stat-label">Sales</div></div>
+      <div class="card stat-card"><div class="stat-icon" style="background:#fcebeb"><i class="ti ti-alert-circle" style="color:var(--danger)"></i></div><div class="stat-num" id="aReports">—</div><div class="stat-label">Reports</div></div>
+      <div class="card stat-card"><div class="stat-icon"><i class="ti ti-check"></i></div><div class="stat-num" id="aResolved">—</div><div class="stat-label">Resolved</div></div>
+      <div class="card stat-card"><div class="stat-icon"><i class="ti ti-star"></i></div><div class="stat-num" id="aRating">—</div><div class="stat-label">Avg Rating</div></div>
     </div>
-    <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-chart-pie" aria-hidden="true"></i> Waste by Category
-      </h4>
-      <canvas id="wasteChart" height="180"></canvas>
+    <div class="grid-2">
+      <div class="card"><h4 style="color:var(--primary);margin-bottom:1rem"><i class="ti ti-chart-line"></i> Monthly Recycling Trend</h4><canvas id="trendChart" height="180"></canvas></div>
+      <div class="card"><h4 style="color:var(--primary);margin-bottom:1rem"><i class="ti ti-chart-pie"></i> Waste by Category</h4><canvas id="wasteChart" height="180"></canvas></div>
     </div>
-  </div>
-  <div style="margin-top:1rem;text-align:center">
-    <button class="btn btn-secondary" onclick="loadAnalytics()">
-      <i class="ti ti-refresh" aria-hidden="true"></i> Refresh Data
-    </button>
+    <div class="card" style="margin-top:1rem"><h4 style="color:var(--primary);margin-bottom:1rem"><i class="ti ti-chart-bar"></i> Listing Status Breakdown</h4><canvas id="listingChart" height="100"></canvas></div>
+    <div style="margin-top:1rem;text-align:center"><button class="btn btn-secondary" onclick="loadAnalytics()"><i class="ti ti-refresh"></i> Refresh</button></div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ CONTACT -->
+<!-- =============================== CONTACT -->
 <div id="contactPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-mail" style="color:var(--primary)" aria-hidden="true"></i> Contact Us</h2>
-    <p>Reach out for partnerships, reporting, or support</p>
-  </div>
+  <div class="section-head"><h2><i class="ti ti-mail" style="color:var(--primary)"></i> Contact Us</h2><p>Reach out for partnerships, reporting, or support</p></div>
   <div class="grid-2">
     <div class="card">
       <div class="form-group"><label>Your Name</label><input type="text" placeholder="Full Name"></div>
       <div class="form-group"><label>Email</label><input type="email" placeholder="email@example.com"></div>
-      <div class="form-group"><label>Subject</label>
-        <select><option>General Enquiry</option><option>Report an Issue</option><option>Partnership</option><option>Technical Support</option></select>
-      </div>
-      <div class="form-group"><label>Message</label><textarea placeholder="Your message..."></textarea></div>
-      <button class="btn btn-primary" onclick="toast('Message sent! We\'ll respond soon.')">
-        <i class="ti ti-send" aria-hidden="true"></i> Send Message
-      </button>
+      <div class="form-group"><label>Subject</label><select><option>General Enquiry</option><option>Report an Issue</option><option>Partnership</option><option>Technical Support</option></select></div>
+      <div class="form-group"><label>Message</label><textarea placeholder="Your message…"></textarea></div>
+      <button class="btn btn-primary" onclick="toast('Message sent! We\'ll respond soon.')"><i class="ti ti-send"></i> Send Message</button>
     </div>
     <div class="card">
-      <h4 style="color:var(--primary);margin-bottom:1.2rem;display:flex;align-items:center;gap:.5rem">
-        <i class="ti ti-address-book" aria-hidden="true"></i> Get in Touch
-      </h4>
-      <div class="info-row">
-        <div class="info-icon"><i class="ti ti-mail" aria-hidden="true"></i></div>
-        <div>
-          <strong>Email</strong>
-          <p style="color:var(--text-m);font-size:.85rem">xxxxxxx@gmail.com</p>
-        </div>
-      </div>
-      <div class="info-row">
-        <div class="info-icon"><i class="ti ti-phone" aria-hidden="true"></i></div>
-        <div>
-          <strong>Helpline</strong>
-          <p style="color:var(--text-m);font-size:.85rem">+91  xxxxxxxx</p>
-        </div>
-      </div>
-      <div class="info-row">
-        <div class="info-icon"><i class="ti ti-building" aria-hidden="true"></i></div>
-        <div>
-          <strong>Office</strong>
-          <p style="color:var(--text-m);font-size:.85rem">Nellore</p>
-        </div>
-      </div>
-      <div class="info-row">
-        <div class="info-icon"><i class="ti ti-clock" aria-hidden="true"></i></div>
-        <div>
-          <strong>Hours</strong>
-          <p style="color:var(--text-m);font-size:.85rem">Mon–Sat · 9 AM – 6 PM</p>
-        </div>
-      </div>
+      <h4 style="color:var(--primary);margin-bottom:1.1rem;display:flex;align-items:center;gap:.4rem"><i class="ti ti-address-book"></i> Get in Touch</h4>
+      <div class="info-row"><div class="info-icon"><i class="ti ti-mail"></i></div><div><strong>Email</strong><p style="color:var(--text-m);font-size:.83rem">support@smartdrain.in</p></div></div>
+      <div class="info-row"><div class="info-icon"><i class="ti ti-phone"></i></div><div><strong>Helpline</strong><p style="color:var(--text-m);font-size:.83rem">+91 xxxxxxxx</p></div></div>
+      <div class="info-row"><div class="info-icon"><i class="ti ti-building"></i></div><div><strong>Office</strong><p style="color:var(--text-m);font-size:.83rem">Nellore</p></div></div>
+      <div class="info-row"><div class="info-icon"><i class="ti ti-clock"></i></div><div><strong>Hours</strong><p style="color:var(--text-m);font-size:.83rem">Mon–Sat · 9 AM – 6 PM</p></div></div>
     </div>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ ADMIN LOGIN -->
+<!-- =============================== ADMIN LOGIN -->
 <div id="adminLoginPage" class="page">
 <div class="auth-wrap">
   <div class="card auth-card">
-    <div style="text-align:center;margin-bottom:1.5rem">
-      <div style="width:56px;height:56px;background:var(--primary-light);border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto .8rem">
-        <i class="ti ti-shield-lock" style="font-size:28px;color:var(--primary)" aria-hidden="true"></i>
-      </div>
+    <div style="text-align:center;margin-bottom:1.4rem">
+      <div style="width:52px;height:52px;background:var(--primary-light);border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto .7rem"><i class="ti ti-shield-lock" style="font-size:26px;color:var(--primary)"></i></div>
       <h3 style="color:var(--primary);font-family:'Syne',sans-serif">Admin Login</h3>
     </div>
     <div class="form-group"><label>Username</label><input id="adminUser" type="text" placeholder="admin"></div>
     <div class="form-group"><label>Password</label><input id="adminPass" type="password" placeholder="admin123"></div>
-    <button class="btn btn-primary" style="width:100%" onclick="handleAdminLogin()">
-      <i class="ti ti-lock-open" aria-hidden="true"></i> Admin Login
-    </button>
-    <p style="color:var(--text-d);font-size:.75rem;margin-top:.8rem;text-align:center">Default: admin / admin123</p>
+    <button class="btn btn-primary" style="width:100%" onclick="handleAdminLogin()"><i class="ti ti-lock-open"></i> Admin Login</button>
+    <p style="color:var(--text-d);font-size:.73rem;margin-top:.7rem;text-align:center">Default: admin / admin123</p>
   </div>
 </div>
 </div>
 
-<!-- ============================================================ ADMIN DASHBOARD -->
+<!-- =============================== ADMIN DASHBOARD -->
 <div id="adminDashPage" class="page">
 <div class="container">
-  <div class="section-head">
-    <h2><i class="ti ti-settings" style="color:var(--primary)" aria-hidden="true"></i> Admin Dashboard</h2>
-    <p>Manage users, pickups, and reports</p>
-  </div>
+  <div class="section-head"><h2><i class="ti ti-settings" style="color:var(--primary)"></i> Admin Dashboard</h2><p>Manage users and reports</p></div>
   <div class="tabs">
-    <button class="tab-btn active" onclick="showAdminTab('users',this)">
-      <i class="ti ti-users" aria-hidden="true"></i> Users
-    </button>
-    <button class="tab-btn" onclick="showAdminTab('pickups',this)">
-      <i class="ti ti-truck" aria-hidden="true"></i> Pickups
-    </button>
-    <button class="tab-btn" onclick="showAdminTab('analytics',this)">
-      <i class="ti ti-chart-bar" aria-hidden="true"></i> Analytics
-    </button>
+    <button class="tab-btn active" onclick="showAdminTab('users',this)"><i class="ti ti-users"></i> Users</button>
+    <button class="tab-btn" onclick="showAdminTab('reports',this)"><i class="ti ti-map-pin"></i> Reports</button>
+    <button class="tab-btn" onclick="showAdminTab('analytics',this)"><i class="ti ti-chart-bar"></i> Analytics</button>
   </div>
+
+  <!-- Users tab -->
   <div id="adminTab-users" class="tab-content active">
     <div class="card" style="overflow-x:auto">
       <table class="data-table">
-        <thead><tr><th>Name</th><th>Email</th><th>Points</th><th>Joined</th></tr></thead>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Role</th>
+            <th>Points</th>
+            <th>Eco Score</th>
+            <th>CO₂ Saved</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
         <tbody id="adminUsersTable"></tbody>
       </table>
     </div>
   </div>
-  <div id="adminTab-pickups" class="tab-content">
-    <div class="card" style="overflow-x:auto">
-      <table class="data-table">
-        <thead><tr><th>User</th><th>Location</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="adminPickupsTable"></tbody>
+
+  <!-- Reports tab — full table structure -->
+  <div id="adminTab-reports" class="tab-content">
+    <div style="overflow-x:auto">
+      <table class="data-table" id="adminReportsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Photo</th>
+            <th>Description</th>
+            <th>Reporter</th>
+            <th>Location</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Rating</th>
+            <th>Completion</th>
+            <th>Map</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="adminReportsTableBody"></tbody>
       </table>
     </div>
   </div>
+
+  <!-- Analytics tab -->
   <div id="adminTab-analytics" class="tab-content">
     <div style="margin-top:1rem">
-      <button class="btn btn-primary" onclick="navigate('analytics')">
-        <i class="ti ti-chart-bar" aria-hidden="true"></i> Open Analytics Dashboard
-      </button>
+      <button class="btn btn-primary" onclick="navigate('analytics')"><i class="ti ti-chart-bar"></i> Open Analytics Dashboard</button>
     </div>
   </div>
 </div>
